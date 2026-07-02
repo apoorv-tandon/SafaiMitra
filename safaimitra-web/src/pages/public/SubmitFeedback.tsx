@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const COMMON_ISSUES = [
@@ -27,6 +27,8 @@ export default function SubmitFeedback() {
 
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = useState('');
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [comments, setComments] = useState('');
   const [loading, setLoading] = useState(true);
@@ -80,8 +82,12 @@ export default function SubmitFeedback() {
       setError('Please select a washroom location.');
       return;
     }
-    if (selectedIssues.length === 0 && !comments.trim()) {
-      setError('Please select at least one issue or provide comments.');
+    if (rating === 0) {
+      setError('Please provide a star rating.');
+      return;
+    }
+    if (rating < 5 && selectedIssues.length === 0 && !comments.trim()) {
+      setError('Please select at least one issue or provide comments for a rating lower than 5.');
       return;
     }
 
@@ -92,7 +98,7 @@ export default function SubmitFeedback() {
       await addDoc(collection(db, 'customer_feedback'), {
         tenantId: orgId,
         locationId: selectedLocation,
-        rating: 1, // Issues inherently mean a poor rating
+        rating: rating,
         issues: selectedIssues,
         comments: comments.trim(),
         timestamp: serverTimestamp(),
@@ -188,6 +194,33 @@ export default function SubmitFeedback() {
                 {locations.length === 0 && (
                   <p className="mt-2 text-xs text-red-500">No locations found for this organization.</p>
                 )}
+              </div>
+
+              {/* Star Rating */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
+                  How was your experience? *
+                </label>
+                <div className="flex justify-center space-x-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onMouseEnter={() => setHoveredRating(star)}
+                      onMouseLeave={() => setHoveredRating(0)}
+                      onClick={() => setRating(star)}
+                      className="focus:outline-none transition-transform hover:scale-110"
+                    >
+                      <Star
+                        className={`h-10 w-10 ${
+                          (hoveredRating || rating) >= star
+                            ? 'text-yellow-400 fill-current'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Issues Chips */}

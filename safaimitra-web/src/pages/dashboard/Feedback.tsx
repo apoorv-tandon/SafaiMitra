@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Star, MessageSquareWarning, Image as ImageIcon } from 'lucide-react';
+import { Star, MessageSquareWarning, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Feedback {
@@ -109,6 +109,17 @@ export default function Feedback() {
     }
   };
 
+  const handleDeleteFeedback = async (feedbackId: string) => {
+    if (window.confirm('Are you sure you want to delete this feedback?')) {
+      try {
+        await deleteDoc(doc(db, 'customer_feedback', feedbackId));
+        fetchFeedback(); // Refresh the list
+      } catch (error) {
+        console.error("Error deleting feedback:", error);
+      }
+    }
+  };
+
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }).map((_, i) => (
       <Star key={i} className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
@@ -192,9 +203,18 @@ export default function Feedback() {
                   <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center space-x-3">
                       {item.status === 'resolved' ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Resolved
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Resolved
+                          </span>
+                          <button
+                            onClick={() => handleDeleteFeedback(item.id)}
+                            className="p-1 text-gray-400 hover:text-rose-600 transition-colors"
+                            title="Delete Feedback"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       ) : item.assignedCleanerId ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           Assigned to: {item.assignedCleanerName}

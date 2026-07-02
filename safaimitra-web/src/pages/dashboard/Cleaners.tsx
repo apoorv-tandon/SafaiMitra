@@ -21,6 +21,8 @@ export default function Cleaners() {
   const [newCleaner, setNewCleaner] = useState({ name: '', email: '', imageUrl: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingAssignmentsFor, setViewingAssignmentsFor] = useState<Cleaner | null>(null);
+  const [cleanerAssignments, setCleanerAssignments] = useState<any[]>([]);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
 
   useEffect(() => {
     fetchCleaners();
@@ -44,6 +46,37 @@ export default function Cleaners() {
       console.error("Error fetching cleaners:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (viewingAssignmentsFor) {
+      fetchAssignments(viewingAssignmentsFor.uid);
+    } else {
+      setCleanerAssignments([]);
+    }
+  }, [viewingAssignmentsFor]);
+
+  const fetchAssignments = async (cleanerId: string) => {
+    setLoadingAssignments(true);
+    try {
+      const q = query(
+        collection(db, 'customer_feedback'),
+        where('assignedCleanerId', '==', cleanerId),
+        where('status', '==', 'pending')
+      );
+      const querySnapshot = await getDocs(q);
+      const fetched: any[] = [];
+      querySnapshot.forEach((doc) => {
+        fetched.push({ id: doc.id, ...doc.data() });
+      });
+      // Sort in memory by timestamp
+      fetched.sort((a, b) => b.timestamp?.toMillis() - a.timestamp?.toMillis());
+      setCleanerAssignments(fetched);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+    } finally {
+      setLoadingAssignments(false);
     }
   };
 
@@ -234,9 +267,38 @@ export default function Cleaners() {
                 <div className="mt-3 text-center sm:mt-5 sm:text-left">
                   <h3 className="text-lg font-medium leading-6 text-gray-900">Assignments: {viewingAssignmentsFor.name}</h3>
                   <div className="mt-4">
-                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
-                      No active assignments found for this cleaner.
-                    </div>
+                    {loadingAssignments ? (
+                      <div className="py-4 text-center text-gray-500">Loading assignments...</div>
+                    ) : cleanerAssignments.length === 0 ? (
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
+                        No active assignments found for this cleaner.
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                        {cleanerAssignments.map(assignment => (
+                          <div key={assignment.id} className="p-4 bg-white rounded-lg border border-gray-200 text-left shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-xs font-medium text-gray-500">
+                                {assignment.timestamp ? new Date(assignment.timestamp.toDate()).toLocaleDateString() : 'Unknown date'}
+                              </span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                                Pending
+                              </span>
+                            </div>
+                            {assignment.issues && assignment.issues.length > 0 && (
+                              <div className="text-sm text-gray-900 font-medium mb-1">
+                                Issues: {assignment.issues.join(', ')}
+                              </div>
+                            )}
+                            {assignment.comments && (
+                              <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded mt-2">
+                                "{assignment.comments}"
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="mt-5 sm:mt-6">
                     <button

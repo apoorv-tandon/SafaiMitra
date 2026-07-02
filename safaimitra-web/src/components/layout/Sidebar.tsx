@@ -30,15 +30,17 @@ export default function Sidebar() {
 
   return (
     <div className="flex flex-col w-64 bg-white text-gray-700 h-full border-r border-gray-200">
-      <div className="flex items-center h-16 px-6 border-b border-gray-200">
+      <Link to="/" className="flex items-center h-16 px-6 border-b border-gray-200 hover:bg-gray-50 transition-colors">
         <ShieldCheck className="h-8 w-8 text-primary-600 mr-3" />
         <span className="text-xl font-bold text-gray-900 tracking-tight">SafaiMitra</span>
-      </div>
+      </Link>
       <div className="flex-1 overflow-y-auto py-4">
         <nav className="px-3 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+            const isActive = item.path === '/dashboard' 
+              ? location.pathname === '/dashboard'
+              : (location.pathname === item.path || location.pathname.startsWith(item.path + '/'));
             return (
               <Link
                 key={item.name}

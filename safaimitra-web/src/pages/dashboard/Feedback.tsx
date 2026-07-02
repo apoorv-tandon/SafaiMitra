@@ -17,6 +17,7 @@ export default function Feedback() {
   const { userData } = useAuth();
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'feedback' | 'submissions'>('feedback');
 
   useEffect(() => {
     fetchFeedback();
@@ -68,58 +69,72 @@ export default function Feedback() {
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-          <button className="border-primary-500 text-primary-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+          <button 
+            onClick={() => setActiveTab('feedback')}
+            className={`${activeTab === 'feedback' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+          >
             Customer Feedback
           </button>
-          <button className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+          <button 
+            onClick={() => setActiveTab('submissions')}
+            className={`${activeTab === 'submissions' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+          >
             Cleaner Submissions (Proofs)
           </button>
         </nav>
       </div>
 
-      {/* Feedback List */}
+      {/* Content Area */}
       <div className="space-y-6">
-        {loading ? (
-          <div className="py-10 text-center text-gray-500">Loading feedback...</div>
-        ) : feedbacks.length === 0 ? (
-          <div className="py-10 text-center text-gray-500 bg-white rounded-lg shadow border border-gray-200">
-            No feedback received yet.
-          </div>
-        ) : (
-          feedbacks.map((item) => (
-            <div key={item.id} className="bg-white shadow-sm overflow-hidden sm:rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
-              <div className="px-4 py-5 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex">{renderStars(item.rating)}</div>
-                    <span className="text-sm font-medium text-gray-900 ml-2">
-                      {item.rating <= 2 ? 'Needs Attention' : 'Good'}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {item.timestamp ? new Date(item.timestamp.toDate()).toLocaleDateString() : 'Unknown date'}
-                  </div>
-                </div>
-                
-                {item.issues && item.issues.length > 0 && (
-                  <div className="mt-4 flex gap-2 flex-wrap">
-                    {item.issues.map(issue => (
-                      <span key={issue} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        <MessageSquareWarning className="h-3 w-3 mr-1" />
-                        {issue}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                {item.comments && (
-                  <p className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                    "{item.comments}"
-                  </p>
-                )}
-              </div>
+        {activeTab === 'feedback' ? (
+          loading ? (
+            <div className="py-10 text-center text-gray-500">Loading feedback...</div>
+          ) : feedbacks.length === 0 ? (
+            <div className="py-10 text-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
+              No feedback received yet.
             </div>
-          ))
+          ) : (
+            feedbacks.map((item) => (
+              <div key={item.id} className="bg-white shadow-sm overflow-hidden sm:rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
+                <div className="px-4 py-5 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex">{renderStars(item.rating)}</div>
+                      <span className="text-sm font-medium text-gray-900 ml-2">
+                        {item.rating <= 2 ? 'Needs Attention' : 'Good'}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {item.timestamp ? new Date(item.timestamp.toDate()).toLocaleDateString() : 'Unknown date'}
+                    </div>
+                  </div>
+                  
+                  {item.issues && item.issues.length > 0 && (
+                    <div className="mt-4 flex gap-2 flex-wrap">
+                      {item.issues.map(issue => (
+                        <span key={issue} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          <MessageSquareWarning className="h-3 w-3 mr-1" />
+                          {issue}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {item.comments && (
+                    <p className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                      "{item.comments}"
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))
+          )
+        ) : (
+          <div className="py-10 text-center flex flex-col items-center justify-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
+            <ImageIcon className="h-12 w-12 text-gray-300 mb-4" />
+            <p className="text-lg font-medium text-gray-900">No proofs submitted yet</p>
+            <p className="mt-1">When cleaners submit photos of completed tasks, they will appear here.</p>
+          </div>
         )}
       </div>
     </motion.div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Star, MessageSquareWarning, Image as ImageIcon } from 'lucide-react';
@@ -11,6 +11,14 @@ interface Feedback {
   issues: string[];
   comments: string;
   timestamp: any;
+  assignedCleanerId?: string;
+  assignedCleanerName?: string;
+  status?: 'pending' | 'resolved';
+}
+
+interface Cleaner {
+  uid: string;
+  name: string;
 }
 
 export default function Feedback() {
@@ -18,10 +26,34 @@ export default function Feedback() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'feedback' | 'submissions'>('feedback');
+  
+  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [assigningFeedback, setAssigningFeedback] = useState<Feedback | null>(null);
+  const [selectedCleanerId, setSelectedCleanerId] = useState('');
 
   useEffect(() => {
     fetchFeedback();
+    fetchCleaners();
   }, [userData]);
+
+  const fetchCleaners = async () => {
+    if (!userData?.tenantId) return;
+    try {
+      const q = query(
+        collection(db, 'users'), 
+        where('tenantId', '==', userData.tenantId), 
+        where('role', '==', 'cleaner')
+      );
+      const querySnapshot = await getDocs(q);
+      const fetched: Cleaner[] = [];
+      querySnapshot.forEach((doc) => {
+        fetched.push({ uid: doc.id, name: doc.data().name || 'Unnamed Cleaner' });
+      });
+      setCleaners(fetched);
+    } catch (error) {
+      console.error("Error fetching cleaners:", error);
+    }
+  };
 
   const fetchFeedback = async () => {
     if (!userData?.tenantId) return;
@@ -44,6 +76,36 @@ export default function Feedback() {
       console.error("Error fetching feedback:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAssignCleaner = async () => {
+    if (!assigningFeedback || !selectedCleanerId) return;
+    const cleaner = cleaners.find(c => c.uid === selectedCleanerId);
+    if (!cleaner) return;
+
+    try {
+      await updateDoc(doc(db, 'customer_feedback', assigningFeedback.id), {
+        assignedCleanerId: cleaner.uid,
+        assignedCleanerName: cleaner.name,
+        status: 'pending'
+      });
+      setAssigningFeedback(null);
+      setSelectedCleanerId('');
+      fetchFeedback(); // Refresh the list
+    } catch (error) {
+      console.error("Error assigning cleaner:", error);
+    }
+  };
+
+  const handleResolveIssue = async (feedbackId: string) => {
+    try {
+      await updateDoc(doc(db, 'customer_feedback', feedbackId), {
+        status: 'resolved'
+      });
+      fetchFeedback(); // Refresh the list
+    } catch (error) {
+      console.error("Error resolving issue:", error);
     }
   };
 
@@ -125,6 +187,44 @@ export default function Feedback() {
                       "{item.comments}"
                     </p>
                   )}
+                  
+                  {/* Assignment and Status Footer */}
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center space-x-3">
+                      {item.status === 'resolved' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Resolved
+                        </span>
+                      ) : item.assignedCleanerId ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Assigned to: {item.assignedCleanerName}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                          Pending Assignment
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex space-x-3">
+                      {item.status !== 'resolved' && item.assignedCleanerId && (
+                        <button
+                          onClick={() => handleResolveIssue(item.id)}
+                          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors"
+                        >
+                          Mark as Resolved
+                        </button>
+                      )}
+                      {item.status !== 'resolved' && !item.assignedCleanerId && (
+                        <button
+                          onClick={() => setAssigningFeedback(item)}
+                          className="inline-flex items-center justify-center px-4 py-2 border border-primary-600 text-sm font-medium rounded-full text-primary-600 bg-white hover:bg-primary-50 shadow-sm transition-colors"
+                        >
+                          Assign Cleaner
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))
@@ -137,6 +237,53 @@ export default function Feedback() {
           </div>
         )}
       </div>
+
+      {/* Assign Cleaner Modal */}
+      {assigningFeedback && (
+        <div className="fixed inset-0 z-10 overflow-y-auto">
+          <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setAssigningFeedback(null)}></div>
+            <div className="inline-block transform overflow-hidden rounded-xl bg-white px-4 pt-5 pb-4 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 sm:align-middle">
+              <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+                Assign Cleaner to Issue
+              </h3>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Cleaner</label>
+                <select
+                  value={selectedCleanerId}
+                  onChange={(e) => setSelectedCleanerId(e.target.value)}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md border"
+                >
+                  <option value="" disabled>Select a cleaner...</option>
+                  {cleaners.map(c => (
+                    <option key={c.uid} value={c.uid}>{c.name}</option>
+                  ))}
+                </select>
+                {cleaners.length === 0 && (
+                  <p className="mt-2 text-xs text-red-500">No cleaners found. Please add a cleaner in the Cleaners tab first.</p>
+                )}
+              </div>
+              <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={handleAssignCleaner}
+                  disabled={!selectedCleanerId}
+                  className="inline-flex w-full justify-center rounded-full border border-transparent bg-primary-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 sm:col-start-2 sm:text-sm disabled:opacity-50 transition-colors"
+                >
+                  Confirm Assignment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAssigningFeedback(null)}
+                  className="mt-3 inline-flex w-full justify-center rounded-full border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 sm:col-start-1 sm:mt-0 sm:text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

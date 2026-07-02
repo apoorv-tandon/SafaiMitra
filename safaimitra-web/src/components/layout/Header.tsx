@@ -1,15 +1,24 @@
 import React from 'react';
-import { LogOut, Bell } from 'lucide-react';
+import { LogOut, Bell, Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 
-export default function Header() {
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const { logout, userData } = useAuth();
 
   return (
     <header className="bg-white h-16 flex items-center justify-between px-6 border-b border-gray-200 z-10 sticky top-0">
       <div className="flex items-center">
-        {/* Mobile menu button could go here */}
+        <button
+          onClick={onMenuClick}
+          className="mr-4 md:hidden text-gray-500 hover:text-gray-700"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
       </div>
       <div className="flex items-center space-x-4">
         <motion.button 

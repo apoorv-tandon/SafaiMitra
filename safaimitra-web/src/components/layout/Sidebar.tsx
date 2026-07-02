@@ -11,7 +11,12 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 
-export default function Sidebar() {
+interface SidebarProps {
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (isOpen: boolean) => void;
+}
+
+export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) {
   const location = useLocation();
   const { userData } = useAuth();
 
@@ -29,7 +34,17 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="flex flex-col w-64 bg-white text-gray-700 h-full border-r border-gray-200">
+    <>
+      {/* Mobile overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col w-64 bg-white text-gray-700 h-full border-r border-gray-200`}>
       <Link to="/" className="flex items-center h-16 px-6 border-b border-gray-200 hover:bg-gray-50 transition-colors">
         <ShieldCheck className="h-8 w-8 text-primary-600 mr-3" />
         <span className="text-xl font-bold text-gray-900 tracking-tight">SafaiMitra</span>
@@ -45,6 +60,7 @@ export default function Sidebar() {
               <Link
                 key={item.name}
                 to={item.path}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center px-4 py-2.5 text-sm font-medium rounded-full transition-colors duration-200 ${
                   isActive 
                     ? 'bg-primary-50 text-primary-700' 
@@ -75,5 +91,6 @@ export default function Sidebar() {
         </div>
       </motion.div>
     </div>
+    </>
   );
 }

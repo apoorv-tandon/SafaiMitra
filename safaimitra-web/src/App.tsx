@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/auth/Login';
+import SubmitFeedback from './pages/public/SubmitFeedback';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Overview from './pages/dashboard/Overview';
 import Locations from './pages/dashboard/Locations';
@@ -15,6 +16,7 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/submit-feedback" element={<SubmitFeedback />} />
           
           <Route path="/dashboard" element={
             <ProtectedRoute>

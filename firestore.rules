@@ -46,7 +46,7 @@ service cloud.firestore {
 
     // Locations Collection
     match /locations/{locationId} {
-      allow read: if hasTenantAccess(resource.data.tenantId);
+      allow read: if true; // Public read allowed for feedback dropdowns
       allow write: if isSuperAdmin() || isOrgAdmin(request.resource.data.tenantId);
     }
 

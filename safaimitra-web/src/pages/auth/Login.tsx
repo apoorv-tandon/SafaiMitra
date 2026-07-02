@@ -166,7 +166,7 @@ export default function Login() {
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-4">Are you a customer wanting to report an issue?</p>
             <button
-              onClick={() => navigate('/submit-feedback?org=demo-org-1')}
+              onClick={() => navigate('/submit-feedback?org=test1')}
               className="w-full flex justify-center py-2.5 px-4 border-2 border-primary-600 rounded-full shadow-sm bg-white text-sm font-medium text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
             >
               Submit Customer Feedback

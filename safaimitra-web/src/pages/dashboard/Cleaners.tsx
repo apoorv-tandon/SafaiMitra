@@ -80,6 +80,19 @@ export default function Cleaners() {
     }
   };
 
+  const handleResolveIssue = async (feedbackId: string) => {
+    try {
+      await updateDoc(doc(db, 'customer_feedback', feedbackId), {
+        status: 'resolved'
+      });
+      if (viewingAssignmentsFor) {
+        fetchAssignments(viewingAssignmentsFor.uid);
+      }
+    } catch (error) {
+      console.error("Error resolving issue:", error);
+    }
+  };
+
   const handleSaveCleaner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userData?.tenantId) return;
@@ -295,6 +308,14 @@ export default function Cleaners() {
                                 "{assignment.comments}"
                               </div>
                             )}
+                            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
+                              <button
+                                onClick={() => handleResolveIssue(assignment.id)}
+                                className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors"
+                              >
+                                Mark as Resolved
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>

@@ -23,17 +23,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If user is logged in but user document is still fetching or not found
+  // If user is logged in but user document is not found in Firestore
   if (user && !userData) {
      return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-50">
-         <p className="text-gray-600">Loading user profile...</p>
-         <button 
-           onClick={() => logout()}
-           className="mt-4 text-sm text-primary-600 underline"
-         >
-           Sign Out
-         </button>
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-50 px-4 text-center">
+         <div className="bg-white p-8 rounded-2xl shadow-sm border border-rose-100 max-w-md w-full">
+           <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-rose-100 mb-4">
+             <span className="text-rose-600 text-xl font-bold">!</span>
+           </div>
+           <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
+           <p className="text-gray-600 mb-6">
+             Your Google account is not registered as an administrator in our system. Please contact your organization owner for access.
+           </p>
+           <button 
+             onClick={() => logout()}
+             className="w-full inline-flex justify-center rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+           >
+             Sign Out
+           </button>
+         </div>
       </div>
     );
   }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LogOut, Bell, Menu, MessageSquareWarning } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,9 +18,28 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (userData?.tenantId) {
-      fetchNotifications();
-    }
+    if (!userData?.tenantId) return;
+
+    const q = query(
+      collection(db, 'customer_feedback'),
+      where('tenantId', '==', userData.tenantId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const fetched: any[] = [];
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (data.status !== 'resolved') {
+          fetched.push({ id: doc.id, ...data });
+        }
+      });
+      fetched.sort((a, b) => b.timestamp?.toMillis() - a.timestamp?.toMillis());
+      setNotifications(fetched.slice(0, 5));
+    }, (error) => {
+      console.error("Error fetching notifications:", error);
+    });
+
+    return () => unsubscribe();
   }, [userData]);
 
   useEffect(() => {
@@ -32,28 +51,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      const q = query(
-        collection(db, 'customer_feedback'),
-        where('tenantId', '==', userData?.tenantId)
-      );
-      const snap = await getDocs(q);
-      const fetched: any[] = [];
-      snap.forEach(doc => {
-        const data = doc.data();
-        if (data.status !== 'resolved') {
-          fetched.push({ id: doc.id, ...data });
-        }
-      });
-      // Sort in memory to avoid needing composite index if not present
-      fetched.sort((a, b) => b.timestamp?.toMillis() - a.timestamp?.toMillis());
-      setNotifications(fetched.slice(0, 5)); // Show top 5 recent
-    } catch (error) {
-      console.error("Error fetching notifications", error);
-    }
-  };
 
   const handleNotificationClick = () => {
     setShowNotifications(false);
@@ -81,7 +78,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <span className="sr-only">View notifications</span>
             <Bell className="h-6 w-6" />
             {notifications.length > 0 && (
-              <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+              <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+                {notifications.length}
+              </span>
             )}
           </motion.button>
 

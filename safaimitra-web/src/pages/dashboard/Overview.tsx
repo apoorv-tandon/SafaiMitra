@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Activity, CheckCircle, AlertTriangle, Users } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
@@ -20,12 +22,65 @@ const itemAnim: Variants = {
 
 export default function Overview() {
   const { userData } = useAuth();
+  
+  const [totalLocations, setTotalLocations] = useState(0);
+  const [activeCleaners, setActiveCleaners] = useState(0);
+  const [openIssues, setOpenIssues] = useState(0);
+  const [slaCompliance, setSlaCompliance] = useState(100);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!userData?.tenantId) return;
+
+      try {
+        // Fetch locations count
+        const locationsQuery = query(collection(db, 'locations'), where('tenantId', '==', userData.tenantId));
+        const locationsSnap = await getDocs(locationsQuery);
+        setTotalLocations(locationsSnap.size);
+
+        // Fetch cleaners count
+        const cleanersQuery = query(collection(db, 'users'), where('tenantId', '==', userData.tenantId), where('role', '==', 'cleaner'));
+        const cleanersSnap = await getDocs(cleanersQuery);
+        setActiveCleaners(cleanersSnap.size);
+
+        // Fetch feedback for issues count & SLA
+        const feedbackQuery = query(collection(db, 'customer_feedback'), where('tenantId', '==', userData.tenantId));
+        const feedbackSnap = await getDocs(feedbackQuery);
+        
+        let openCount = 0;
+        let resolvedCount = 0;
+        
+        feedbackSnap.forEach(doc => {
+          const data = doc.data();
+          if (data.status === 'resolved') {
+            resolvedCount++;
+          } else {
+            openCount++;
+          }
+        });
+        
+        setOpenIssues(openCount);
+        
+        const totalIssues = openCount + resolvedCount;
+        if (totalIssues > 0) {
+          setSlaCompliance(Math.round((resolvedCount / totalIssues) * 1000) / 10);
+        } else {
+          setSlaCompliance(100);
+        }
+
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+      }
+    };
+
+    fetchDashboardData();
+  }, [userData]);
 
   const stats = [
-    { name: 'Total Locations', stat: '12', icon: Activity, color: 'bg-blue-50', text: 'text-blue-600' },
-    { name: 'Cleaners Active', stat: '45', icon: Users, color: 'bg-emerald-50', text: 'text-emerald-600' },
-    { name: 'SLA Compliance', stat: '98.2%', icon: CheckCircle, color: 'bg-primary-50', text: 'text-primary-600' },
-    { name: 'Open Issues', stat: '3', icon: AlertTriangle, color: 'bg-rose-50', text: 'text-rose-600' },
+    { name: 'Total Locations', stat: totalLocations.toString(), icon: Activity, color: 'bg-blue-50', text: 'text-blue-600' },
+    { name: 'Cleaners Active', stat: activeCleaners.toString(), icon: Users, color: 'bg-emerald-50', text: 'text-emerald-600' },
+    { name: 'SLA Compliance', stat: `${slaCompliance}%`, icon: CheckCircle, color: 'bg-primary-50', text: 'text-primary-600' },
+    { name: 'Open Issues', stat: openIssues.toString(), icon: AlertTriangle, color: 'bg-rose-50', text: 'text-rose-600' },
   ];
 
   return (

@@ -47,7 +47,7 @@ export default function Assignments() {
       const fetched: any[] = [];
       snap.forEach(doc => {
         const data = doc.data();
-        if (data.status === 'pending') {
+        if (data.status === 'pending' || data.status === 'review_pending') {
           fetched.push({ id: doc.id, ...data });
         }
       });
@@ -94,8 +94,10 @@ export default function Assignments() {
         submittedAt: new Date(),
       });
 
-      // 3. Remove from local state
-      setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+      // 3. Update local state instead of removing
+      setAssignments(prev => prev.map(a => 
+        a.id === assignmentId ? { ...a, status: 'review_pending', proofPhotoUrl: photoUrl } : a
+      ));
       
       // Clean up photo state
       setPhotos(prev => {
@@ -151,9 +153,15 @@ export default function Assignments() {
                     <MapPin className="h-4 w-4 mr-1" />
                     {locations[assignment.locationId] || 'Unknown Location'}
                   </div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                    Action Required
-                  </span>
+                  {assignment.status === 'review_pending' ? (
+                    <span className="text-xs font-semibold uppercase tracking-wider text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
+                      Verification Pending
+                    </span>
+                  ) : (
+                    <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                      Action Required
+                    </span>
+                  )}
                 </div>
                 
                 <h3 className="text-lg font-bold text-gray-900 mb-2">
@@ -169,64 +177,80 @@ export default function Assignments() {
                 )}
                 
                 {/* Photo Upload Area */}
-                <div className="mt-4 mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Proof of Cleaning</p>
-                  
-                  <div 
-                    className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
-                      photoPreviews[assignment.id] ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 bg-gray-50'
-                    }`}
-                    onClick={() => fileInputRefs.current[assignment.id]?.click()}
-                  >
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      capture="environment" 
-                      ref={el => fileInputRefs.current[assignment.id] = el}
-                      onChange={(e) => handlePhotoSelect(assignment.id, e)}
-                      className="hidden" 
-                    />
-                    
-                    {photoPreviews[assignment.id] ? (
-                      <div className="relative">
-                        <img src={photoPreviews[assignment.id]} alt="Proof preview" className="w-full h-48 object-cover rounded-lg shadow-sm" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity text-white font-medium">
-                          Tap to change photo
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="py-4 flex flex-col items-center">
-                        <div className="h-12 w-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-2">
-                          <Camera className="h-6 w-6 text-primary-600" />
-                        </div>
-                        <span className="text-primary-600 font-semibold text-sm">Take Photo</span>
-                        <span className="text-xs text-gray-500 mt-1">Required to complete task</span>
-                      </div>
-                    )}
+                {assignment.status === 'review_pending' ? (
+                  <div className="mt-4 mb-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Submitted Proof</p>
+                    <div className="border border-gray-200 rounded-xl p-2 bg-gray-50 text-center">
+                      {assignment.proofPhotoUrl ? (
+                        <img src={assignment.proofPhotoUrl} alt="Proof" className="w-full h-48 object-cover rounded-lg shadow-sm" />
+                      ) : (
+                        <p className="py-8 text-gray-500">Photo submitted</p>
+                      )}
+                      <p className="mt-2 text-sm text-yellow-700 font-medium">Waiting for Admin to verify</p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="mt-4 mb-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Proof of Cleaning</p>
+                    
+                    <div 
+                      className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
+                        photoPreviews[assignment.id] ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 bg-gray-50'
+                      }`}
+                      onClick={() => fileInputRefs.current[assignment.id]?.click()}
+                    >
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        capture="environment" 
+                        ref={el => fileInputRefs.current[assignment.id] = el}
+                        onChange={(e) => handlePhotoSelect(assignment.id, e)}
+                        className="hidden" 
+                      />
+                      
+                      {photoPreviews[assignment.id] ? (
+                        <div className="relative">
+                          <img src={photoPreviews[assignment.id]} alt="Proof preview" className="w-full h-48 object-cover rounded-lg shadow-sm" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity text-white font-medium">
+                            Tap to change photo
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-4 flex flex-col items-center">
+                          <div className="h-12 w-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-2">
+                            <Camera className="h-6 w-6 text-primary-600" />
+                          </div>
+                          <span className="text-primary-600 font-semibold text-sm">Take Photo</span>
+                          <span className="text-xs text-gray-500 mt-1">Required to complete task</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                {error && (
+                {error && assignment.status !== 'review_pending' && (
                   <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-start">
                     <AlertCircle className="h-5 w-5 mr-2 shrink-0 mt-0.5" />
                     <span>{error}</span>
                   </div>
                 )}
 
-                <button
-                  onClick={() => handleResolve(assignment.id)}
-                  disabled={isSubmitting === assignment.id || !photos[assignment.id]}
-                  className="w-full mt-2 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-lg flex items-center justify-center transition-colors shadow-sm disabled:opacity-50"
-                >
-                  {isSubmitting === assignment.id ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-5 w-5 mr-2" />
-                      Submit for Review
-                    </>
-                  )}
-                </button>
+                {assignment.status !== 'review_pending' && (
+                  <button
+                    onClick={() => handleResolve(assignment.id)}
+                    disabled={isSubmitting === assignment.id || !photos[assignment.id]}
+                    className="w-full mt-2 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-lg flex items-center justify-center transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    {isSubmitting === assignment.id ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 mr-2" />
+                        Submit for Review
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </motion.div>
           ))}

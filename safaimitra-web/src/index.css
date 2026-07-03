@@ -11,6 +11,6 @@
   body {
     @apply text-gray-900 antialiased;
     font-family: 'Roboto', sans-serif;
-    background-color: #f8f9fa; /* Google's light gray background */
+    background-color: #f0f9ff; /* Light sky blue background */
   }
 }

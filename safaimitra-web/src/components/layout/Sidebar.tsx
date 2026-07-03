@@ -6,7 +6,6 @@ import {
   Users, 
   MessageSquare, 
   Settings,
-  ShieldCheck,
   Calendar,
   ClipboardList
 } from 'lucide-react';
@@ -50,7 +49,7 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: Sideb
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col w-64 bg-white text-gray-700 h-full border-r border-gray-200`}>
       <Link to="/" className="flex items-center h-16 px-6 border-b border-gray-200 hover:bg-gray-50 transition-colors">
-        <ShieldCheck className="h-8 w-8 text-primary-600 mr-3" />
+        <img src="/logo.png" alt="SafaiMitra Logo" className="h-8 w-8 mr-3 object-contain" />
         <span className="text-xl font-bold text-gray-900 tracking-tight">SafaiMitra</span>
       </Link>
       <div className="flex-1 overflow-y-auto py-4">

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { ShieldCheck, CheckCircle2, Star, MapPin } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Send, MapPin, CheckCircle2, ChevronRight, Check, Star } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const COMMON_ISSUES = [
   'Dirty floor',
@@ -160,8 +160,8 @@ export default function SubmitFeedback() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-8">
-          <div className="mx-auto h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mb-4">
-            <ShieldCheck className="h-8 w-8 text-primary-600" />
+          <div className="mx-auto h-16 w-16 mb-4 flex items-center justify-center">
+             <img src="/logo.png" alt="SafaiMitra Logo" className="h-16 w-16 object-contain" />
           </div>
           <h2 className="text-3xl font-extrabold text-gray-900">
             Report an Issue

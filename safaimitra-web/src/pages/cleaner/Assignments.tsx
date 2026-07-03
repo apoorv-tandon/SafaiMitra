@@ -85,8 +85,11 @@ export default function Assignments() {
       // If Firebase Storage is not enabled, this can hang indefinitely or fail.
       let photoUrl = '';
       try {
-        const storageRef = ref(storage, `proofs/${userData?.tenantId}/${assignmentId}/${photo.name}`);
-        const uploadTask = uploadBytes(storageRef, photo);
+        const storageRef = ref(storage, `cleaning_proofs/${userData?.tenantId}/${assignmentId}/${photo.name}`);
+        const metadata = {
+          contentType: photo.type || 'image/jpeg'
+        };
+        const uploadTask = uploadBytes(storageRef, photo, metadata);
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('timeout')), 5000);
         });

@@ -13,7 +13,8 @@ interface Feedback {
   timestamp: any;
   assignedCleanerId?: string;
   assignedCleanerName?: string;
-  status?: 'pending' | 'resolved';
+  status?: 'pending' | 'resolved' | 'review_pending';
+  proofPhotoUrl?: string;
 }
 
 interface Cleaner {
@@ -101,11 +102,24 @@ export default function Feedback() {
   const handleResolveIssue = async (feedbackId: string) => {
     try {
       await updateDoc(doc(db, 'customer_feedback', feedbackId), {
-        status: 'resolved'
+        status: 'resolved',
+        resolvedAt: new Date()
       });
       fetchFeedback(); // Refresh the list
     } catch (error) {
       console.error("Error resolving issue:", error);
+    }
+  };
+
+  const handleRejectSubmission = async (feedbackId: string) => {
+    try {
+      await updateDoc(doc(db, 'customer_feedback', feedbackId), {
+        status: 'pending',
+        proofPhotoUrl: null // clear the rejected photo
+      });
+      fetchFeedback();
+    } catch (error) {
+      console.error("Error rejecting submission:", error);
     }
   };
 
@@ -182,6 +196,15 @@ export default function Feedback() {
                     </div>
                   </div>
                   
+                  {item.status === 'review_pending' && (
+                    <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                      <span className="text-sm font-medium text-blue-800 flex items-center">
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Cleaner has submitted proof for review
+                      </span>
+                    </div>
+                  )}
+                  
                   {item.issues && item.issues.length > 0 && (
                     <div className="mt-4 flex gap-2 flex-wrap">
                       {item.issues.map(issue => (
@@ -250,11 +273,74 @@ export default function Feedback() {
             ))
           )
         ) : (
-          <div className="py-10 text-center flex flex-col items-center justify-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
-            <ImageIcon className="h-12 w-12 text-gray-300 mb-4" />
-            <p className="text-lg font-medium text-gray-900">No proofs submitted yet</p>
-            <p className="mt-1">When cleaners submit photos of completed tasks, they will appear here.</p>
-          </div>
+          feedbacks.filter(f => f.status === 'review_pending').length === 0 ? (
+            <div className="py-10 text-center flex flex-col items-center justify-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
+              <ImageIcon className="h-12 w-12 text-gray-300 mb-4" />
+              <p className="text-lg font-medium text-gray-900">No proofs submitted yet</p>
+              <p className="mt-1">When cleaners submit photos of completed tasks, they will appear here for your review.</p>
+            </div>
+          ) : (
+            feedbacks.filter(f => f.status === 'review_pending').map(item => (
+              <div key={item.id} className="bg-white shadow-sm overflow-hidden sm:rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
+                <div className="px-4 py-5 sm:px-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">
+                        Review Submission
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Assigned to: <span className="font-medium text-gray-900">{item.assignedCleanerName}</span>
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Pending Review
+                    </span>
+                  </div>
+                  
+                  {item.issues && item.issues.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Original Issues:</p>
+                      <div className="flex gap-2 flex-wrap">
+                        {item.issues.map(issue => (
+                          <span key={issue} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            {issue}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {item.proofPhotoUrl && (
+                    <div className="mt-4 mb-6">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Proof of Cleaning:</p>
+                      <div className="rounded-lg overflow-hidden border border-gray-200 inline-block max-w-md w-full">
+                        <img 
+                          src={item.proofPhotoUrl} 
+                          alt="Proof submitted by cleaner" 
+                          className="w-full h-auto object-cover max-h-96"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex gap-4">
+                    <button
+                      onClick={() => handleResolveIssue(item.id)}
+                      className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors"
+                    >
+                      Approve & Mark Resolved
+                    </button>
+                    <button
+                      onClick={() => handleRejectSubmission(item.id)}
+                      className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-red-200 text-sm font-medium rounded-lg text-red-700 bg-red-50 hover:bg-red-100 shadow-sm transition-colors"
+                    >
+                      Reject (Re-assign)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )
         )}
       </div>
 

@@ -47,7 +47,7 @@ export default function Assignments() {
       const fetched: any[] = [];
       snap.forEach(doc => {
         const data = doc.data();
-        if (data.status !== 'resolved') {
+        if (data.status === 'pending') {
           fetched.push({ id: doc.id, ...data });
         }
       });
@@ -89,9 +89,9 @@ export default function Assignments() {
       // 2. Update Firestore document
       const docRef = doc(db, 'customer_feedback', assignmentId);
       await updateDoc(docRef, {
-        status: 'resolved',
+        status: 'review_pending',
         proofPhotoUrl: photoUrl,
-        resolvedAt: new Date(),
+        submittedAt: new Date(),
       });
 
       // 3. Remove from local state
@@ -223,7 +223,7 @@ export default function Assignments() {
                   ) : (
                     <>
                       <CheckCircle2 className="h-5 w-5 mr-2" />
-                      Mark as Completed
+                      Submit for Review
                     </>
                   )}
                 </button>

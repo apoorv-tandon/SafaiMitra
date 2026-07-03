@@ -43,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const docSnap = await getDoc(docRef);
           
           if (docSnap.exists()) {
-            setUserData(docSnap.data() as UserData);
+            setUserData({ uid: firebaseUser.uid, ...docSnap.data() } as UserData);
           } else {
             console.error("No user data found in Firestore");
             setUserData(null);

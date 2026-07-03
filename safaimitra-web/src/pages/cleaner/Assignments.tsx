@@ -171,7 +171,7 @@ export default function Assignments() {
                   className="w-full mt-2 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-lg flex items-center justify-center transition-colors shadow-sm"
                 >
                   <CheckCircle2 className="h-5 w-5 mr-2" />
-                  Mark as Resolved
+                  Mark as Completed
                 </button>
               </div>
             </motion.div>

@@ -12,14 +12,12 @@ export default function Assignments() {
   const [locations, setLocations] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   
-  // Resolve Modal State
-  const [resolvingId, setResolvingId] = useState<string | null>(null);
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photos, setPhotos] = useState<Record<string, File>>({});
+  const [photoPreviews, setPhotoPreviews] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState<string | null>(null);
   const [error, setError] = useState('');
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
     if (userData?.uid && userData?.tenantId) {
@@ -63,33 +61,33 @@ export default function Assignments() {
     }
   };
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = (assignmentId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setPhoto(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      setPhotos(prev => ({ ...prev, [assignmentId]: file }));
+      setPhotoPreviews(prev => ({ ...prev, [assignmentId]: URL.createObjectURL(file) }));
       setError('');
     }
   };
 
-  const handleResolve = async () => {
-    if (!resolvingId) return;
+  const handleResolve = async (assignmentId: string) => {
+    const photo = photos[assignmentId];
     if (!photo) {
       setError('A photo is required as proof of cleaning.');
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(assignmentId);
     setError('');
 
     try {
       // 1. Upload photo to Firebase Storage
-      const storageRef = ref(storage, `proofs/${userData?.tenantId}/${resolvingId}/${photo.name}`);
+      const storageRef = ref(storage, `proofs/${userData?.tenantId}/${assignmentId}/${photo.name}`);
       await uploadBytes(storageRef, photo);
       const photoUrl = await getDownloadURL(storageRef);
 
       // 2. Update Firestore document
-      const docRef = doc(db, 'customer_feedback', resolvingId);
+      const docRef = doc(db, 'customer_feedback', assignmentId);
       await updateDoc(docRef, {
         status: 'resolved',
         proofPhotoUrl: photoUrl,
@@ -97,21 +95,25 @@ export default function Assignments() {
       });
 
       // 3. Remove from local state
-      setAssignments(prev => prev.filter(a => a.id !== resolvingId));
-      closeModal();
+      setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+      
+      // Clean up photo state
+      setPhotos(prev => {
+        const next = { ...prev };
+        delete next[assignmentId];
+        return next;
+      });
+      setPhotoPreviews(prev => {
+        const next = { ...prev };
+        delete next[assignmentId];
+        return next;
+      });
     } catch (err) {
       console.error("Error resolving issue:", err);
       setError('Failed to resolve issue. Please try again.');
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(null);
     }
-  };
-
-  const closeModal = () => {
-    setResolvingId(null);
-    setPhoto(null);
-    setPhotoPreview(null);
-    setError('');
   };
 
   if (loading) {
@@ -166,40 +168,43 @@ export default function Assignments() {
                   </p>
                 )}
                 
-                <button
-                  onClick={() => setResolvingId(assignment.id)}
-                  className="w-full mt-2 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-lg flex items-center justify-center transition-colors shadow-sm"
-                >
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  Mark as Completed
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* Resolution Modal */}
-      <AnimatePresence>
-        {resolvingId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden"
-            >
-              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 className="text-lg font-bold text-gray-900">Resolve Issue</h3>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="p-5">
-                <p className="text-sm text-gray-600 mb-4">
-                  Please upload a photo showing that the washroom has been cleaned and the issue is resolved.
-                </p>
+                {/* Photo Upload Area */}
+                <div className="mt-4 mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Proof of Cleaning</p>
+                  
+                  <div 
+                    className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
+                      photoPreviews[assignment.id] ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 bg-gray-50'
+                    }`}
+                    onClick={() => fileInputRefs.current[assignment.id]?.click()}
+                  >
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment" 
+                      ref={el => fileInputRefs.current[assignment.id] = el}
+                      onChange={(e) => handlePhotoSelect(assignment.id, e)}
+                      className="hidden" 
+                    />
+                    
+                    {photoPreviews[assignment.id] ? (
+                      <div className="relative">
+                        <img src={photoPreviews[assignment.id]} alt="Proof preview" className="w-full h-48 object-cover rounded-lg shadow-sm" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity text-white font-medium">
+                          Tap to change photo
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-4 flex flex-col items-center">
+                        <div className="h-12 w-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-2">
+                          <Camera className="h-6 w-6 text-primary-600" />
+                        </div>
+                        <span className="text-primary-600 font-semibold text-sm">Take Photo</span>
+                        <span className="text-xs text-gray-500 mt-1">Required to complete task</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {error && (
                   <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-start">
@@ -208,59 +213,25 @@ export default function Assignments() {
                   </div>
                 )}
 
-                <div 
-                  className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
-                    photoPreview ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 bg-gray-50'
-                  }`}
-                  onClick={() => fileInputRef.current?.click()}
+                <button
+                  onClick={() => handleResolve(assignment.id)}
+                  disabled={isSubmitting === assignment.id || !photos[assignment.id]}
+                  className="w-full mt-2 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-lg flex items-center justify-center transition-colors shadow-sm disabled:opacity-50"
                 >
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    capture="environment" 
-                    ref={fileInputRef}
-                    onChange={handlePhotoSelect}
-                    className="hidden" 
-                  />
-                  
-                  {photoPreview ? (
-                    <div className="relative">
-                      <img src={photoPreview} alt="Proof preview" className="w-full h-48 object-cover rounded-lg shadow-sm" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity text-white font-medium">
-                        Tap to change photo
-                      </div>
-                    </div>
+                  {isSubmitting === assignment.id ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <div className="py-6 flex flex-col items-center">
-                      <div className="h-14 w-14 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
-                        <Camera className="h-7 w-7 text-primary-600" />
-                      </div>
-                      <span className="text-primary-600 font-semibold">Take Photo</span>
-                      <span className="text-xs text-gray-500 mt-1">Required</span>
-                    </div>
+                    <>
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                      Mark as Completed
+                    </>
                   )}
-                </div>
-
-                <div className="mt-6 flex space-x-3">
-                  <button
-                    onClick={closeModal}
-                    className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleResolve}
-                    disabled={isSubmitting || !photo}
-                    className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center"
-                  >
-                    {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Confirm'}
-                  </button>
-                </div>
+                </button>
               </div>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

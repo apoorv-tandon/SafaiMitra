@@ -127,13 +127,13 @@ export default function CleanerHistory() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, delay: index * 0.05 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden border-l-4 border-l-green-400"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden border-l-4 border-l-blue-400"
               >
                 <div className="p-4">
                   <div className="flex items-start gap-3">
-                    {/* Green Checkmark */}
-                    <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    {/* Blue Checkmark */}
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle2 className="h-4 w-4 text-blue-600" />
                     </div>
 
                     {/* Content */}

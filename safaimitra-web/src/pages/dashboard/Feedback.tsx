@@ -227,7 +227,7 @@ export default function Feedback() {
                     <div className="flex items-center space-x-3">
                       {item.status === 'resolved' ? (
                         <div className="flex items-center space-x-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             Resolved
                           </span>
                           <button
@@ -253,7 +253,7 @@ export default function Feedback() {
                       {item.status !== 'resolved' && item.assignedCleanerId && (
                         <button
                           onClick={() => handleResolveIssue(item.id)}
-                          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors"
+                          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors"
                         >
                           Mark as Resolved
                         </button>
@@ -326,7 +326,7 @@ export default function Feedback() {
                   <div className="mt-4 pt-4 border-t border-gray-100 flex gap-4">
                     <button
                       onClick={() => handleResolveIssue(item.id)}
-                      className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors"
+                      className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors"
                     >
                       Approve & Mark Resolved
                     </button>

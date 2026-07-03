@@ -220,8 +220,8 @@ export default function Assignments() {
       
       {assignments.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-          <div className="mx-auto h-16 w-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle2 className="h-8 w-8 text-green-500" />
+          <div className="mx-auto h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 className="h-8 w-8 text-blue-500" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">You're all caught up!</h2>
           <p className="text-gray-500">No active assignments at the moment. Take a breather.</p>

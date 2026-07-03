@@ -89,13 +89,14 @@ export default function Overview() {
   }, [userData]);
 
   const CHART_COLORS = {
-    green: '#16A34A',
+    primary: '#0ea5e9', // sky-500
+    cyan: '#06b6d4',
     amber: '#F59E0B',
     blue: '#3B82F6',
     red: '#EF4444',
   };
 
-  const PIE_COLORS = [CHART_COLORS.amber, CHART_COLORS.blue, CHART_COLORS.green];
+  const PIE_COLORS = [CHART_COLORS.amber, CHART_COLORS.blue, CHART_COLORS.cyan];
 
   const fetchChartData = async () => {
     if (!userData?.tenantId) return;
@@ -172,7 +173,7 @@ export default function Overview() {
 
   const stats = [
     { name: 'Total Locations', stat: totalLocations.toString(), icon: Activity, color: 'bg-blue-50', text: 'text-blue-600' },
-    { name: 'Cleaners Active', stat: activeCleaners.toString(), icon: Users, color: 'bg-emerald-50', text: 'text-emerald-600' },
+    { name: 'Cleaners Active', stat: activeCleaners.toString(), icon: Users, color: 'bg-cyan-50', text: 'text-cyan-600' },
     { name: 'SLA Compliance', stat: `${slaCompliance}%`, icon: CheckCircle, color: 'bg-primary-50', text: 'text-primary-600' },
     { name: 'Open Issues', stat: openIssues.toString(), icon: AlertTriangle, color: 'bg-rose-50', text: 'text-rose-600' },
   ];
@@ -225,7 +226,7 @@ export default function Overview() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Line type="monotone" dataKey="count" stroke={CHART_COLORS.green} strokeWidth={2} dot={{ r: 4 }} name="Feedback" />
+              <Line type="monotone" dataKey="count" stroke={CHART_COLORS.primary} strokeWidth={2} dot={{ r: 4 }} name="Feedback" />
             </LineChart>
           </ResponsiveContainer>
         </div>

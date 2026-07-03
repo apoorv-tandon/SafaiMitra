@@ -250,7 +250,7 @@ export default function Cleaners() {
                 )}
                 <h3 className="text-lg font-medium text-gray-900">{cleaner.name || 'Unnamed Cleaner'}</h3>
                 <p className="text-sm text-gray-500">{cleaner.email}</p>
-                <span className="mt-4 px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                <span className="mt-4 px-3 py-1 text-xs font-medium bg-cyan-100 text-cyan-800 rounded-full">
                   {cleaner.status || 'Active'}
                 </span>
 

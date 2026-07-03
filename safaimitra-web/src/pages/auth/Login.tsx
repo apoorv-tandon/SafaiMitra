@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { auth, db } from '../../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -28,8 +29,23 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate('/dashboard');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Verify role matches selected tab
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      const role = userDoc.data()?.role;
+
+      if (loginType === 'cleaner' && role !== 'cleaner') {
+        await signOut(auth);
+        throw new Error('This account is not registered as a cleaner.');
+      }
+
+      if (loginType === 'admin' && role === 'cleaner') {
+        await signOut(auth);
+        throw new Error('This account does not have admin privileges.');
+      }
+
+      navigate(role === 'cleaner' ? '/cleaner' : '/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to login');
     } finally {
@@ -43,8 +59,17 @@ export default function Login() {
     const provider = new GoogleAuthProvider();
     
     try {
-      await signInWithPopup(auth, provider);
-      navigate('/dashboard');
+      const userCredential = await signInWithPopup(auth, provider);
+      
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      const role = userDoc.data()?.role;
+
+      if (loginType === 'admin' && role === 'cleaner') {
+        await signOut(auth);
+        throw new Error('This account does not have admin privileges.');
+      }
+
+      navigate(role === 'cleaner' ? '/cleaner' : '/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in with Google');
     } finally {

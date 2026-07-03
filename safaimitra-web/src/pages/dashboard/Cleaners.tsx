@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { db, firebaseConfig } from '../../lib/firebase';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { Plus, UserCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -18,7 +20,7 @@ export default function Cleaners() {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newCleaner, setNewCleaner] = useState({ name: '', email: '', imageUrl: '' });
+  const [newCleaner, setNewCleaner] = useState({ name: '', email: '', password: '', imageUrl: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingAssignmentsFor, setViewingAssignmentsFor] = useState<Cleaner | null>(null);
   const [cleanerAssignments, setCleanerAssignments] = useState<any[]>([]);
@@ -91,28 +93,46 @@ export default function Cleaners() {
           imageUrl: newCleaner.imageUrl,
         });
       } else {
-        await addDoc(collection(db, 'users'), {
-          name: newCleaner.name,
-          email: newCleaner.email,
-          imageUrl: newCleaner.imageUrl,
-          role: 'cleaner',
-          status: 'Active',
-          tenantId: userData.tenantId,
-          createdAt: serverTimestamp(),
-        });
+        if (!newCleaner.password) {
+          alert('Password is required for new cleaners');
+          return;
+        }
+        
+        // Create a secondary app to create the user without logging out the admin
+        const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
+        const secondaryAuth = getAuth(secondaryApp);
+        
+        try {
+          const userCred = await createUserWithEmailAndPassword(secondaryAuth, newCleaner.email, newCleaner.password);
+          const newUid = userCred.user.uid;
+          
+          await setDoc(doc(db, 'users', newUid), {
+            name: newCleaner.name,
+            email: newCleaner.email,
+            imageUrl: newCleaner.imageUrl,
+            role: 'cleaner',
+            status: 'Active',
+            tenantId: userData.tenantId,
+            createdAt: serverTimestamp(),
+          });
+        } finally {
+          // Always clean up the secondary app
+          await deleteApp(secondaryApp);
+        }
       }
       setIsModalOpen(false);
       setEditingId(null);
-      setNewCleaner({ name: '', email: '', imageUrl: '' });
+      setNewCleaner({ name: '', email: '', password: '', imageUrl: '' });
       fetchCleaners();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving cleaner:", error);
+      alert(error.message || "An error occurred");
     }
   };
 
   const openEditModal = (cleaner: Cleaner) => {
     setEditingId(cleaner.uid);
-    setNewCleaner({ name: cleaner.name, email: cleaner.email, imageUrl: cleaner.imageUrl || '' });
+    setNewCleaner({ name: cleaner.name, email: cleaner.email, password: '', imageUrl: cleaner.imageUrl || '' });
     setIsModalOpen(true);
   };
 
@@ -144,7 +164,7 @@ export default function Cleaners() {
           <button
             onClick={() => {
               setEditingId(null);
-              setNewCleaner({ name: '', email: '', imageUrl: '' });
+              setNewCleaner({ name: '', email: '', password: '', imageUrl: '' });
               setIsModalOpen(true);
             }}
             className="inline-flex items-center justify-center rounded-full border border-transparent bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 sm:w-auto transition-colors"
@@ -223,6 +243,19 @@ export default function Cleaners() {
                           onChange={(e) => setNewCleaner({ ...newCleaner, email: e.target.value })}
                         />
                       </div>
+                      {!editingId && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Initial Password</label>
+                          <input
+                            type="password"
+                            required
+                            minLength={6}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm border p-2"
+                            value={newCleaner.password}
+                            onChange={(e) => setNewCleaner({ ...newCleaner, password: e.target.value })}
+                          />
+                        </div>
+                      )}
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Profile Image URL (Optional)</label>
                         <input

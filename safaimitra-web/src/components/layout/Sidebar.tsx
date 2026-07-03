@@ -6,7 +6,9 @@ import {
   Users, 
   MessageSquare, 
   Settings,
-  ShieldCheck
+  ShieldCheck,
+  Calendar,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
@@ -26,7 +28,9 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: Sideb
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Locations & Washrooms', path: '/dashboard/locations', icon: MapPin },
     { name: 'Cleaners', path: '/dashboard/cleaners', icon: Users },
+    { name: 'Schedule', path: '/dashboard/schedule', icon: Calendar },
     { name: 'Feedback & Submissions', path: '/dashboard/feedback', icon: MessageSquare },
+    { name: 'History', path: '/dashboard/history', icon: ClipboardList },
   ];
 
   if (userData?.role === 'super_admin') {

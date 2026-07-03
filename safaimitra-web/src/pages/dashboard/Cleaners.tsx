@@ -4,7 +4,7 @@ import { db, firebaseConfig } from '../../lib/firebase';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useAuth } from '../../contexts/AuthContext';
-import { Plus, UserCircle } from 'lucide-react';
+import { Plus, UserCircle, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Cleaner {
@@ -13,6 +13,12 @@ interface Cleaner {
   email: string;
   status: string;
   imageUrl?: string;
+}
+
+interface CleanerStats {
+  tasksCompleted: number;
+  avgResponseHours: number;
+  approvalRate: number;
 }
 
 export default function Cleaners() {
@@ -25,10 +31,17 @@ export default function Cleaners() {
   const [viewingAssignmentsFor, setViewingAssignmentsFor] = useState<Cleaner | null>(null);
   const [cleanerAssignments, setCleanerAssignments] = useState<any[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [cleanerStats, setCleanerStats] = useState<Record<string, CleanerStats>>({});
 
   useEffect(() => {
     fetchCleaners();
   }, [userData]);
+
+  useEffect(() => {
+    if (cleaners.length > 0) {
+      fetchCleanerStats();
+    }
+  }, [cleaners]);
 
   const fetchCleaners = async () => {
     if (!userData?.tenantId) return;
@@ -49,6 +62,51 @@ export default function Cleaners() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCleanerStats = async () => {
+    const statsMap: Record<string, CleanerStats> = {};
+    try {
+      for (const cleaner of cleaners) {
+        const q = query(
+          collection(db, 'customer_feedback'),
+          where('assignedCleanerId', '==', cleaner.uid)
+        );
+        const snap = await getDocs(q);
+
+        let resolvedCount = 0;
+        let reviewPendingCount = 0;
+        let totalResponseMs = 0;
+        let responseCount = 0;
+
+        snap.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data.status === 'resolved') {
+            resolvedCount++;
+            if (data.submittedAt && data.timestamp) {
+              const submitted = data.submittedAt.toMillis ? data.submittedAt.toMillis() : new Date(data.submittedAt).getTime();
+              const created = data.timestamp.toMillis ? data.timestamp.toMillis() : new Date(data.timestamp).getTime();
+              if (submitted > created) {
+                totalResponseMs += submitted - created;
+                responseCount++;
+              }
+            }
+          } else if (data.status === 'review_pending') {
+            reviewPendingCount++;
+          }
+        });
+
+        const tasksCompleted = resolvedCount;
+        const avgResponseHours = responseCount > 0 ? totalResponseMs / responseCount / (1000 * 60 * 60) : 0;
+        const total = resolvedCount + reviewPendingCount;
+        const approvalRate = total > 0 ? (resolvedCount / total) * 100 : 0;
+
+        statsMap[cleaner.uid] = { tasksCompleted, avgResponseHours, approvalRate };
+      }
+    } catch (error) {
+      console.error('Error fetching cleaner stats:', error);
+    }
+    setCleanerStats(statsMap);
   };
 
   useEffect(() => {
@@ -195,6 +253,45 @@ export default function Cleaners() {
                 <span className="mt-4 px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                   {cleaner.status || 'Active'}
                 </span>
+
+                {/* Performance Stats */}
+                {cleanerStats[cleaner.uid] ? (
+                  cleanerStats[cleaner.uid].tasksCompleted === 0 ? (
+                    <p className="mt-4 text-xs text-gray-400 italic">No data yet</p>
+                  ) : (
+                    <>
+                      <div className="mt-4 w-full grid grid-cols-3 gap-2">
+                        <div className="bg-gray-50 rounded-lg p-2 text-center">
+                          <p className="text-xs text-gray-500">Tasks Done</p>
+                          <p className="text-sm font-semibold text-gray-900">{cleanerStats[cleaner.uid].tasksCompleted}</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-2 text-center">
+                          <p className="text-xs text-gray-500">Avg Response</p>
+                          <p className="text-sm font-semibold text-gray-900">{cleanerStats[cleaner.uid].avgResponseHours.toFixed(1)}h</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-2 text-center">
+                          <p className="text-xs text-gray-500">Approval %</p>
+                          <p className="text-sm font-semibold text-gray-900">{cleanerStats[cleaner.uid].approvalRate.toFixed(0)}%</p>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        {cleanerStats[cleaner.uid].approvalRate >= 90 && cleanerStats[cleaner.uid].avgResponseHours < 4 ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full" style={{ backgroundColor: '#FEF3C7', color: '#F59E0B' }}>
+                            <Star className="h-3.5 w-3.5" style={{ color: '#F59E0B' }} /> Top Performer
+                          </span>
+                        ) : cleanerStats[cleaner.uid].approvalRate >= 75 ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full" style={{ backgroundColor: '#F3F4F6', color: '#9CA3AF' }}>
+                            <Star className="h-3.5 w-3.5" style={{ color: '#9CA3AF' }} /> Silver
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full" style={{ backgroundColor: '#FDF2E9', color: '#CD7F32' }}>
+                            <Star className="h-3.5 w-3.5" style={{ color: '#CD7F32' }} /> Bronze
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )
+                ) : null}
               </div>
               <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
                 <div className="flex justify-between items-center w-full text-sm font-medium">

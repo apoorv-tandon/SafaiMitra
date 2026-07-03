@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Plus, MapPin, Search } from 'lucide-react';
+import { Plus, MapPin, Search, QrCode, Download, Copy, X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface Location {
   id: string;
@@ -19,6 +20,9 @@ export default function Locations() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newLocation, setNewLocation] = useState({ name: '', address: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [qrLocation, setQrLocation] = useState<Location | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchLocations();
@@ -82,6 +86,45 @@ export default function Locations() {
         console.error("Error deleting location:", error);
       }
     }
+  };
+
+  const getQrUrl = (location: Location) =>
+    `${window.location.origin}/submit-feedback?org=${userData?.tenantId}&loc=${location.id}`;
+
+  const handleDownloadQr = () => {
+    if (!qrRef.current || !qrLocation) return;
+    const svgElement = qrRef.current.querySelector('svg');
+    if (!svgElement) return;
+
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `QR-${qrLocation.name.replace(/\s+/g, '-')}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const handleCopyLink = () => {
+    if (!qrLocation) return;
+    navigator.clipboard.writeText(getQrUrl(qrLocation)).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    });
   };
 
   return (
@@ -151,6 +194,13 @@ export default function Locations() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{location.address}</td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          <button
+                            onClick={() => setQrLocation(location)}
+                            className="text-gray-500 hover:text-primary-600 mr-4"
+                            title="Show QR Code"
+                          >
+                            <QrCode className="h-5 w-5 inline" />
+                          </button>
                           <button onClick={() => openEditModal(location)} className="text-primary-600 hover:text-primary-900 mr-4">Edit</button>
                           <button onClick={() => handleDeleteLocation(location.id)} className="text-rose-600 hover:text-rose-900">Delete</button>
                         </td>
@@ -214,6 +264,66 @@ export default function Locations() {
                       </div>
                     </form>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {qrLocation && (
+        <div className="fixed inset-0 z-10 overflow-y-auto">
+          <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setQrLocation(null)}></div>
+            <div className="inline-block transform overflow-hidden rounded-xl bg-white px-4 pt-5 pb-4 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md sm:p-6 sm:align-middle">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium leading-6 text-gray-900">
+                  QR Code
+                </h3>
+                <button
+                  onClick={() => setQrLocation(null)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary-100 mb-3">
+                  <MapPin className="h-5 w-5 text-primary-600" />
+                </div>
+                <h4 className="text-xl font-semibold text-gray-900 mb-1">{qrLocation.name}</h4>
+                <p className="text-sm text-gray-500 mb-6">{qrLocation.address}</p>
+
+                <div ref={qrRef} className="inline-block p-4 bg-white border-2 border-gray-100 rounded-xl mb-6">
+                  <QRCodeSVG
+                    value={getQrUrl(qrLocation)}
+                    size={256}
+                    level="H"
+                    includeMargin
+                  />
+                </div>
+
+                <p className="text-xs text-gray-400 mb-6 break-all px-4">
+                  {getQrUrl(qrLocation)}
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleDownloadQr}
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-full text-white bg-primary-600 hover:bg-primary-700 shadow-sm transition-colors"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download QR
+                  </button>
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    {copySuccess ? 'Copied!' : 'Copy Link'}
+                  </button>
                 </div>
               </div>
             </div>

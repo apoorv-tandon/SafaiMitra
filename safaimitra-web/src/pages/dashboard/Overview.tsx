@@ -4,6 +4,10 @@ import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Activity, CheckCircle, AlertTriangle, Users } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  LineChart, Line, PieChart, Pie, Cell
+} from 'recharts';
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -27,6 +31,10 @@ export default function Overview() {
   const [activeCleaners, setActiveCleaners] = useState(0);
   const [openIssues, setOpenIssues] = useState(0);
   const [slaCompliance, setSlaCompliance] = useState(100);
+
+  const [feedbackTrend, setFeedbackTrend] = useState<{ date: string; count: number }[]>([]);
+  const [topIssues, setTopIssues] = useState<{ name: string; count: number }[]>([]);
+  const [resolutionStatus, setResolutionStatus] = useState<{ name: string; value: number }[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -76,6 +84,92 @@ export default function Overview() {
     fetchDashboardData();
   }, [userData]);
 
+  useEffect(() => {
+    fetchChartData();
+  }, [userData]);
+
+  const CHART_COLORS = {
+    green: '#16A34A',
+    amber: '#F59E0B',
+    blue: '#3B82F6',
+    red: '#EF4444',
+  };
+
+  const PIE_COLORS = [CHART_COLORS.amber, CHART_COLORS.blue, CHART_COLORS.green];
+
+  const fetchChartData = async () => {
+    if (!userData?.tenantId) return;
+    try {
+      const feedbackQuery = query(
+        collection(db, 'customer_feedback'),
+        where('tenantId', '==', userData.tenantId)
+      );
+      const feedbackSnap = await getDocs(feedbackQuery);
+
+      // --- Feedback Trend (last 7 days) ---
+      const now = new Date();
+      const dayMap: Record<string, number> = {};
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        dayMap[key] = 0;
+      }
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      // --- Top Issues & Resolution Status ---
+      const issueCount: Record<string, number> = {};
+      let pendingCount = 0;
+      let reviewPendingCount = 0;
+      let resolvedCount = 0;
+
+      feedbackSnap.forEach((docSnap) => {
+        const data = docSnap.data();
+
+        // Trend
+        if (data.timestamp) {
+          const ts = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+          if (ts >= sevenDaysAgo) {
+            const key = ts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            if (dayMap[key] !== undefined) {
+              dayMap[key]++;
+            }
+          }
+        }
+
+        // Issues
+        if (data.issues && Array.isArray(data.issues)) {
+          data.issues.forEach((issue: string) => {
+            issueCount[issue] = (issueCount[issue] || 0) + 1;
+          });
+        }
+
+        // Resolution
+        if (data.status === 'resolved') resolvedCount++;
+        else if (data.status === 'review_pending') reviewPendingCount++;
+        else pendingCount++;
+      });
+
+      setFeedbackTrend(Object.entries(dayMap).map(([date, count]) => ({ date, count })));
+
+      const sortedIssues = Object.entries(issueCount)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6);
+      setTopIssues(sortedIssues);
+
+      setResolutionStatus([
+        { name: 'Pending', value: pendingCount },
+        { name: 'Review Pending', value: reviewPendingCount },
+        { name: 'Resolved', value: resolvedCount },
+      ]);
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    }
+  };
+
   const stats = [
     { name: 'Total Locations', stat: totalLocations.toString(), icon: Activity, color: 'bg-blue-50', text: 'text-blue-600' },
     { name: 'Cleaners Active', stat: activeCleaners.toString(), icon: Users, color: 'bg-emerald-50', text: 'text-emerald-600' },
@@ -121,11 +215,60 @@ export default function Overview() {
         ))}
       </motion.div>
       
-      {/* Additional charts will go here in Phase 3 */}
-      <div className="mt-8 bg-white rounded-xl p-6 border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics (Coming Soon)</h2>
-        <div className="h-64 border border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-          <span className="text-gray-500 font-medium">Charts will be populated in Phase 3</span>
+      {/* Performance Charts */}
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Feedback Trend - Line Chart */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Feedback Trend (Last 7 Days)</h2>
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={feedbackTrend}>
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+              <Tooltip />
+              <Line type="monotone" dataKey="count" stroke={CHART_COLORS.green} strokeWidth={2} dot={{ r: 4 }} name="Feedback" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Top Issues - Horizontal Bar Chart */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Issues</h2>
+          {topIssues.length === 0 ? (
+            <div className="h-[260px] flex items-center justify-center text-gray-400">No issues reported yet</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={topIssues} layout="vertical" margin={{ left: 20 }}>
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={120} />
+                <Tooltip />
+                <Bar dataKey="count" fill={CHART_COLORS.blue} radius={[0, 4, 4, 0]} name="Count" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Resolution Status - Pie Chart */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:col-span-2 lg:col-span-1">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Resolution Status</h2>
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie
+                data={resolutionStatus}
+                cx="50%"
+                cy="50%"
+                innerRadius={55}
+                outerRadius={90}
+                paddingAngle={3}
+                dataKey="value"
+                label={({ name, value }) => `${name}: ${value}`}
+              >
+                {resolutionStatus.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

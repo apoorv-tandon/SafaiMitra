@@ -9,8 +9,11 @@ import Overview from './pages/dashboard/Overview';
 import Locations from './pages/dashboard/Locations';
 import Cleaners from './pages/dashboard/Cleaners';
 import Feedback from './pages/dashboard/Feedback';
+import Schedule from './pages/dashboard/Schedule';
+import History from './pages/dashboard/History';
 import CleanerLayout from './pages/cleaner/CleanerLayout';
 import Assignments from './pages/cleaner/Assignments';
+import CleanerHistory from './pages/cleaner/CleanerHistory';
 
 const App = () => {
   return (
@@ -28,7 +31,9 @@ const App = () => {
             <Route index element={<Overview />} />
             <Route path="locations" element={<Locations />} />
             <Route path="cleaners" element={<Cleaners />} />
+            <Route path="schedule" element={<Schedule />} />
             <Route path="feedback" element={<Feedback />} />
+            <Route path="history" element={<History />} />
           </Route>
 
           {/* Cleaner App Routes */}
@@ -38,6 +43,7 @@ const App = () => {
             </ProtectedRoute>
           }>
             <Route index element={<Assignments />} />
+            <Route path="history" element={<CleanerHistory />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

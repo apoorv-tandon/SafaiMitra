@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, getDoc, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,8 +22,34 @@ export default function Assignments() {
   useEffect(() => {
     if (userData?.uid && userData?.tenantId) {
       fetchAssignments();
+      fetchSchedules();
     }
   }, [userData]);
+
+  const fetchSchedules = async () => {
+    try {
+      const today = new Date().getDay(); // 0-6
+      const q = query(
+        collection(db, 'schedules'),
+        where('tenantId', '==', userData?.tenantId),
+        where('cleanerId', '==', userData?.uid),
+        where('dayOfWeek', '==', today)
+      );
+      const snap = await getDocs(q);
+      const fetched: any[] = [];
+      snap.forEach(doc => {
+        fetched.push({ id: doc.id, isSchedule: true, ...doc.data() });
+      });
+      // Append schedules to assignments state (but only those we haven't already submitted locally)
+      setAssignments(prev => {
+        // filter out any existing schedules to avoid duplicates
+        const noSchedules = prev.filter(a => !a.isSchedule);
+        return [...noSchedules, ...fetched];
+      });
+    } catch (error) {
+      console.error("Error fetching schedules:", error);
+    }
+  };
 
   const fetchAssignments = async () => {
     try {
@@ -112,7 +138,8 @@ export default function Assignments() {
     });
   };
 
-  const handleResolve = async (assignmentId: string) => {
+  const handleResolve = async (assignment: any) => {
+    const assignmentId = assignment.id;
     const photo = photos[assignmentId];
     if (!photo) {
       setError('A photo is required as proof of cleaning.');
@@ -126,18 +153,39 @@ export default function Assignments() {
       // 1. Compress image to Base64 (bypasses Firebase Storage entirely)
       const base64Photo = await compressImage(photo);
 
-      // 2. Update Firestore document with the Base64 image
-      const docRef = doc(db, 'customer_feedback', assignmentId);
-      await updateDoc(docRef, {
-        status: 'review_pending',
-        proofPhotoUrl: base64Photo,
-        submittedAt: new Date(),
-      });
+      // 2. Update or Create Firestore document
+      if (assignment.isSchedule) {
+        // Create a new customer_feedback entry for this scheduled task
+        await addDoc(collection(db, 'customer_feedback'), {
+          tenantId: userData?.tenantId,
+          locationId: assignment.locationId,
+          issues: ['Routine Cleaning (' + assignment.timeSlot + ')'],
+          assignedCleanerId: userData?.uid,
+          assignedCleanerName: userData?.name,
+          status: 'review_pending',
+          proofPhotoUrl: base64Photo,
+          submittedAt: new Date(),
+          timestamp: new Date(),
+          isScheduled: true,
+          scheduleId: assignment.id
+        });
+        
+        // Hide the schedule from the current view so they don't submit it twice
+        setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+      } else {
+        // Update existing feedback document
+        const docRef = doc(db, 'customer_feedback', assignmentId);
+        await updateDoc(docRef, {
+          status: 'review_pending',
+          proofPhotoUrl: base64Photo,
+          submittedAt: new Date(),
+        });
 
-      // 3. Update local state instead of removing
-      setAssignments(prev => prev.map(a => 
-        a.id === assignmentId ? { ...a, status: 'review_pending', proofPhotoUrl: base64Photo } : a
-      ));
+        // Update local state instead of removing
+        setAssignments(prev => prev.map(a => 
+          a.id === assignmentId ? { ...a, status: 'review_pending', proofPhotoUrl: base64Photo } : a
+        ));
+      }
       
       // Clean up photo state
       setPhotos(prev => {
@@ -205,9 +253,11 @@ export default function Assignments() {
                 </div>
                 
                 <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  {assignment.issues && assignment.issues.length > 0 
-                    ? assignment.issues.join(', ') 
-                    : 'General Cleaning Required'}
+                  {assignment.isSchedule 
+                    ? `Routine Cleaning • ${assignment.timeSlot}`
+                    : (assignment.issues && assignment.issues.length > 0 
+                        ? assignment.issues.join(', ') 
+                        : 'General Cleaning Required')}
                 </h3>
                 
                 {assignment.comments && (
@@ -277,7 +327,7 @@ export default function Assignments() {
 
                 {assignment.status !== 'review_pending' && (
                   <button
-                    onClick={() => handleResolve(assignment.id)}
+                    onClick={() => handleResolve(assignment)}
                     disabled={isSubmitting === assignment.id || !photos[assignment.id]}
                     className="w-full mt-2 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-lg flex items-center justify-center transition-colors shadow-sm disabled:opacity-50"
                   >

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { ShieldCheck, CheckCircle2, Star } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Star, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const COMMON_ISSUES = [
@@ -24,6 +24,7 @@ interface Location {
 export default function SubmitFeedback() {
   const [searchParams] = useSearchParams();
   const orgId = searchParams.get('org');
+  const locId = searchParams.get('loc');
 
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -35,6 +36,7 @@ export default function SubmitFeedback() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [qrAutoSelected, setQrAutoSelected] = useState(false);
 
   useEffect(() => {
     if (orgId) {
@@ -55,8 +57,16 @@ export default function SubmitFeedback() {
       });
       setLocations(locs);
       
-      // Auto-select if there's only one location
-      if (locs.length === 1) {
+      // Auto-select if loc param matches a fetched location (QR scan)
+      if (locId) {
+        const matched = locs.find(l => l.id === locId);
+        if (matched) {
+          setSelectedLocation(matched.id);
+          setQrAutoSelected(true);
+        }
+      }
+      // Fallback: auto-select if there's only one location
+      if (!locId && locs.length === 1) {
         setSelectedLocation(locs[0].id);
       }
     } catch (err) {
@@ -180,17 +190,38 @@ export default function SubmitFeedback() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Which washroom are you in? *
                 </label>
-                <select
-                  value={selectedLocation}
-                  onChange={(e) => setSelectedLocation(e.target.value)}
-                  required
-                  className="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-lg border bg-gray-50"
-                >
-                  <option value="" disabled>Select a location</option>
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                  ))}
-                </select>
+                {qrAutoSelected && selectedLocation ? (
+                  <div className="mt-1 flex items-center justify-between bg-primary-50 border border-primary-200 rounded-lg px-4 py-3">
+                    <div className="flex items-center">
+                      <MapPin className="h-5 w-5 text-primary-600 mr-2 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {locations.find(l => l.id === selectedLocation)?.name}
+                        </p>
+                        <p className="text-xs text-primary-600">Scanned via QR code</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setQrAutoSelected(false)}
+                      className="text-xs font-medium text-primary-700 hover:text-primary-900 underline ml-3"
+                    >
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => setSelectedLocation(e.target.value)}
+                    required
+                    className="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-lg border bg-gray-50"
+                  >
+                    <option value="" disabled>Select a location</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
+                )}
                 {locations.length === 0 && (
                   <p className="mt-2 text-xs text-red-500">No locations found for this organization.</p>
                 )}

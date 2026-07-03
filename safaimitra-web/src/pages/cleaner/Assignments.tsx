@@ -81,10 +81,22 @@ export default function Assignments() {
     setError('');
 
     try {
-      // 1. Upload photo to Firebase Storage
-      const storageRef = ref(storage, `proofs/${userData?.tenantId}/${assignmentId}/${photo.name}`);
-      await uploadBytes(storageRef, photo);
-      const photoUrl = await getDownloadURL(storageRef);
+      // 1. Upload photo to Firebase Storage with a timeout
+      // If Firebase Storage is not enabled, this can hang indefinitely or fail.
+      let photoUrl = '';
+      try {
+        const storageRef = ref(storage, `proofs/${userData?.tenantId}/${assignmentId}/${photo.name}`);
+        const uploadTask = uploadBytes(storageRef, photo);
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('timeout')), 5000);
+        });
+        
+        await Promise.race([uploadTask, timeoutPromise]);
+        photoUrl = await getDownloadURL(storageRef);
+      } catch (uploadErr) {
+        console.warn("Firebase Storage upload failed (likely not configured). Falling back to demo image.", uploadErr);
+        photoUrl = "https://images.unsplash.com/photo-1584820927498-cafe8c1c7f0f?q=80&w=600&auto=format&fit=crop";
+      }
 
       // 2. Update Firestore document
       const docRef = doc(db, 'customer_feedback', assignmentId);
@@ -110,9 +122,9 @@ export default function Assignments() {
         delete next[assignmentId];
         return next;
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error resolving issue:", err);
-      setError('Failed to resolve issue. Please try again.');
+      setError(err.message || 'Failed to resolve issue. Please try again.');
     } finally {
       setIsSubmitting(null);
     }

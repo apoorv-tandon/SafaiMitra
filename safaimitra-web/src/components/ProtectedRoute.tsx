@@ -47,7 +47,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   if (allowedRoles && userData && !allowedRoles.includes(userData.role)) {
+    // If they are a cleaner trying to access admin, send them to cleaner app
+    if (userData.role === 'cleaner') {
+      return <Navigate to="/cleaner" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
+  }
+
+  // If there are no allowed roles specified (e.g. standard dashboard) but the user is a cleaner, redirect them.
+  if (!allowedRoles && userData?.role === 'cleaner') {
+    return <Navigate to="/cleaner" replace />;
   }
 
   return <>{children}</>;

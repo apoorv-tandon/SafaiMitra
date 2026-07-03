@@ -9,6 +9,8 @@ import Overview from './pages/dashboard/Overview';
 import Locations from './pages/dashboard/Locations';
 import Cleaners from './pages/dashboard/Cleaners';
 import Feedback from './pages/dashboard/Feedback';
+import CleanerLayout from './pages/cleaner/CleanerLayout';
+import Assignments from './pages/cleaner/Assignments';
 
 const App = () => {
   return (
@@ -27,6 +29,15 @@ const App = () => {
             <Route path="locations" element={<Locations />} />
             <Route path="cleaners" element={<Cleaners />} />
             <Route path="feedback" element={<Feedback />} />
+          </Route>
+
+          {/* Cleaner App Routes */}
+          <Route path="/cleaner" element={
+            <ProtectedRoute allowedRoles={['cleaner']}>
+              <CleanerLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Assignments />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

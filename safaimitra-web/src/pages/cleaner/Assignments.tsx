@@ -61,13 +61,55 @@ export default function Assignments() {
     }
   };
 
-  const handlePhotoSelect = (assignmentId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+  const handlePhotoSelect = (assignmentId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
       setPhotos(prev => ({ ...prev, [assignmentId]: file }));
-      setPhotoPreviews(prev => ({ ...prev, [assignmentId]: URL.createObjectURL(file) }));
+      // Create local preview URL
+      const url = URL.createObjectURL(file);
+      setPhotoPreviews(prev => ({ ...prev, [assignmentId]: url }));
       setError('');
     }
+  };
+
+  // Compress image and return as Base64 data URL to store in Firestore directly
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Quality 0.6 to keep size well under Firestore's 1MB limit
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
   };
 
   const handleResolve = async (assignmentId: string) => {
@@ -81,37 +123,20 @@ export default function Assignments() {
     setError('');
 
     try {
-      // 1. Upload photo to Firebase Storage with a timeout
-      // If Firebase Storage is not enabled, this can hang indefinitely or fail.
-      let photoUrl = '';
-      try {
-        const storageRef = ref(storage, `cleaning_proofs/${userData?.tenantId}/${assignmentId}/${photo.name}`);
-        const metadata = {
-          contentType: photo.type || 'image/jpeg'
-        };
-        const uploadTask = uploadBytes(storageRef, photo, metadata);
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('timeout')), 5000);
-        });
-        
-        await Promise.race([uploadTask, timeoutPromise]);
-        photoUrl = await getDownloadURL(storageRef);
-      } catch (uploadErr) {
-        console.warn("Firebase Storage upload failed (likely not configured). Falling back to demo image.", uploadErr);
-        photoUrl = "https://images.unsplash.com/photo-1584820927498-cafe8c1c7f0f?q=80&w=600&auto=format&fit=crop";
-      }
+      // 1. Compress image to Base64 (bypasses Firebase Storage entirely)
+      const base64Photo = await compressImage(photo);
 
-      // 2. Update Firestore document
+      // 2. Update Firestore document with the Base64 image
       const docRef = doc(db, 'customer_feedback', assignmentId);
       await updateDoc(docRef, {
         status: 'review_pending',
-        proofPhotoUrl: photoUrl,
+        proofPhotoUrl: base64Photo,
         submittedAt: new Date(),
       });
 
       // 3. Update local state instead of removing
       setAssignments(prev => prev.map(a => 
-        a.id === assignmentId ? { ...a, status: 'review_pending', proofPhotoUrl: photoUrl } : a
+        a.id === assignmentId ? { ...a, status: 'review_pending', proofPhotoUrl: base64Photo } : a
       ));
       
       // Clean up photo state

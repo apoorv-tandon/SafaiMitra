@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Activity, CheckCircle, AlertTriangle, Users } from 'lucide-react';
+import { Activity, CheckCircle, AlertTriangle, Users, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { motion, Variants } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -26,6 +27,7 @@ const itemAnim: Variants = {
 
 export default function Overview() {
   const { userData } = useAuth();
+  const navigate = useNavigate();
   
   const [totalLocations, setTotalLocations] = useState(0);
   const [activeCleaners, setActiveCleaners] = useState(0);
@@ -60,6 +62,10 @@ export default function Overview() {
         
         feedbackSnap.forEach(doc => {
           const data = doc.data();
+          // Exclude admin-scheduled tasks from public feedback metrics
+          if (data.isScheduled || (data.issues && data.issues.some((i: string) => i.startsWith('Routine Cleaning')))) {
+            return;
+          }
           if (data.status === 'resolved') {
             resolvedCount++;
           } else {
@@ -89,14 +95,13 @@ export default function Overview() {
   }, [userData]);
 
   const CHART_COLORS = {
-    primary: '#0ea5e9', // sky-500
-    cyan: '#06b6d4',
+    green: '#16A34A',
     amber: '#F59E0B',
     blue: '#3B82F6',
     red: '#EF4444',
   };
 
-  const PIE_COLORS = [CHART_COLORS.amber, CHART_COLORS.blue, CHART_COLORS.cyan];
+  const PIE_COLORS = [CHART_COLORS.amber, CHART_COLORS.blue, CHART_COLORS.green];
 
   const fetchChartData = async () => {
     if (!userData?.tenantId) return;
@@ -128,6 +133,11 @@ export default function Overview() {
 
       feedbackSnap.forEach((docSnap) => {
         const data = docSnap.data();
+
+        // Exclude admin-scheduled tasks from public feedback metrics
+        if (data.isScheduled || (data.issues && data.issues.some((i: string) => i.startsWith('Routine Cleaning')))) {
+          return;
+        }
 
         // Trend
         if (data.timestamp) {
@@ -173,9 +183,9 @@ export default function Overview() {
 
   const stats = [
     { name: 'Total Locations', stat: totalLocations.toString(), icon: Activity, color: 'bg-blue-50', text: 'text-blue-600' },
-    { name: 'Cleaners Active', stat: activeCleaners.toString(), icon: Users, color: 'bg-cyan-50', text: 'text-cyan-600' },
+    { name: 'Cleaners Active', stat: activeCleaners.toString(), icon: Users, color: 'bg-emerald-50', text: 'text-emerald-600' },
     { name: 'SLA Compliance', stat: `${slaCompliance}%`, icon: CheckCircle, color: 'bg-primary-50', text: 'text-primary-600' },
-    { name: 'Open Issues', stat: openIssues.toString(), icon: AlertTriangle, color: 'bg-rose-50', text: 'text-rose-600' },
+    { name: 'Open Issues', stat: openIssues.toString(), icon: AlertTriangle, color: 'bg-rose-50', text: 'text-rose-600', link: '/dashboard/feedback' },
   ];
 
   return (
@@ -194,7 +204,12 @@ export default function Overview() {
         className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
       >
         {stats.map((item) => (
-          <motion.div variants={itemAnim} key={item.name} className="bg-white overflow-hidden rounded-xl border border-gray-200">
+          <motion.div 
+            variants={itemAnim} 
+            key={item.name} 
+            className={`bg-white overflow-hidden rounded-xl border border-gray-200 ${item.link ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+            onClick={() => item.link && navigate(item.link)}
+          >
             <div className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -202,13 +217,16 @@ export default function Overview() {
                     <item.icon className="h-6 w-6" aria-hidden="true" />
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-5 w-0 flex-1 flex justify-between items-start">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">{item.name}</dt>
                     <dd>
                       <div className="text-lg font-medium text-gray-900">{item.stat}</div>
                     </dd>
                   </dl>
+                  {item.link && (
+                    <ExternalLink className="h-4 w-4 text-gray-400 opacity-50" />
+                  )}
                 </div>
               </div>
             </div>
@@ -226,7 +244,7 @@ export default function Overview() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Line type="monotone" dataKey="count" stroke={CHART_COLORS.primary} strokeWidth={2} dot={{ r: 4 }} name="Feedback" />
+              <Line type="monotone" dataKey="count" stroke={CHART_COLORS.green} strokeWidth={2} dot={{ r: 4 }} name="Feedback" />
             </LineChart>
           </ResponsiveContainer>
         </div>

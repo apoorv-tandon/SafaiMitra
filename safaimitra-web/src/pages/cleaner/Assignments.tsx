@@ -3,7 +3,9 @@ import { collection, query, where, getDocs, doc, updateDoc, getDoc, addDoc } fro
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { CheckCircle2, MapPin, Camera, X, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, MapPin, Camera, X, Loader2, AlertCircle, Calendar } from 'lucide-react';
+
+const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Assignments() {
@@ -28,21 +30,23 @@ export default function Assignments() {
 
   const fetchSchedules = async () => {
     try {
-      const today = new Date().getDay(); // 0-6
+      // Fetch ALL schedules for this cleaner (not just today)
       const q = query(
         collection(db, 'schedules'),
         where('tenantId', '==', userData?.tenantId),
-        where('cleanerId', '==', userData?.uid),
-        where('dayOfWeek', '==', today)
+        where('cleanerId', '==', userData?.uid)
       );
       const snap = await getDocs(q);
       const fetched: any[] = [];
       snap.forEach(doc => {
         fetched.push({ id: doc.id, isSchedule: true, ...doc.data() });
       });
-      // Append schedules to assignments state (but only those we haven't already submitted locally)
+      // Sort by dayOfWeek then timeSlot
+      fetched.sort((a, b) => {
+        if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
+        return a.timeSlot.localeCompare(b.timeSlot);
+      });
       setAssignments(prev => {
-        // filter out any existing schedules to avoid duplicates
         const noSchedules = prev.filter(a => !a.isSchedule);
         return [...noSchedules, ...fetched];
       });
@@ -220,26 +224,45 @@ export default function Assignments() {
       
       {assignments.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-          <div className="mx-auto h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle2 className="h-8 w-8 text-blue-500" />
+          <div className="mx-auto h-16 w-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 className="h-8 w-8 text-green-500" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">You're all caught up!</h2>
           <p className="text-gray-500">No active assignments at the moment. Take a breather.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {assignments.map(assignment => (
+          {assignments.map(assignment => {
+            const isToday = assignment.isSchedule && assignment.dayOfWeek === new Date().getDay();
+            return (
             <motion.div 
               key={assignment.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+              className={`bg-white rounded-xl shadow-sm border overflow-hidden ${
+                assignment.isSchedule && isToday ? 'border-primary-300' : 'border-gray-200'
+              }`}
             >
               <div className="p-5">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center text-primary-700 font-medium bg-primary-50 px-3 py-1 rounded-full text-sm">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {locations[assignment.locationId] || 'Unknown Location'}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center text-primary-700 font-medium bg-primary-50 px-3 py-1 rounded-full text-sm">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {locations[assignment.locationId] || assignment.locationName || 'Unknown Location'}
+                    </div>
+                    {assignment.isSchedule && (
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center text-xs text-gray-500">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {DAYS_OF_WEEK[assignment.dayOfWeek]} · {assignment.timeSlot}
+                        </span>
+                        {isToday && (
+                          <span className="text-xs font-bold text-white bg-primary-600 px-2 py-0.5 rounded-full">
+                            Today
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   {assignment.status === 'review_pending' ? (
                     <span className="text-xs font-semibold uppercase tracking-wider text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
@@ -254,7 +277,7 @@ export default function Assignments() {
                 
                 <h3 className="text-lg font-bold text-gray-900 mb-2">
                   {assignment.isSchedule 
-                    ? `Routine Cleaning • ${assignment.timeSlot}`
+                    ? `Routine Cleaning`
                     : (assignment.issues && assignment.issues.length > 0 
                         ? assignment.issues.join(', ') 
                         : 'General Cleaning Required')}
@@ -343,7 +366,8 @@ export default function Assignments() {
                 )}
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

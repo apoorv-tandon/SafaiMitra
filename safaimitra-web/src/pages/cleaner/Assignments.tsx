@@ -30,10 +30,9 @@ export default function Assignments() {
 
   const fetchSchedules = async () => {
     try {
-      // Fetch ALL schedules for this cleaner (not just today)
+      // Query only by cleanerId — avoids needing a composite Firestore index
       const q = query(
         collection(db, 'schedules'),
-        where('tenantId', '==', userData?.tenantId),
         where('cleanerId', '==', userData?.uid)
       );
       const snap = await getDocs(q);

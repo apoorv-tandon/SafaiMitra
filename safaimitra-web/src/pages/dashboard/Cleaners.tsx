@@ -120,6 +120,7 @@ export default function Cleaners() {
   const fetchAssignments = async (cleanerId: string) => {
     setLoadingAssignments(true);
     try {
+      // Fetch complaint-based assignments
       const q = query(
         collection(db, 'customer_feedback'),
         where('assignedCleanerId', '==', cleanerId),
@@ -128,11 +129,26 @@ export default function Cleaners() {
       const querySnapshot = await getDocs(q);
       const fetched: any[] = [];
       querySnapshot.forEach((doc) => {
-        fetched.push({ id: doc.id, ...doc.data() });
+        fetched.push({ id: doc.id, type: 'complaint', ...doc.data() });
       });
-      // Sort in memory by timestamp
       fetched.sort((a, b) => b.timestamp?.toMillis() - a.timestamp?.toMillis());
-      setCleanerAssignments(fetched);
+
+      // Also fetch scheduled tasks
+      const schedQ = query(
+        collection(db, 'schedules'),
+        where('cleanerId', '==', cleanerId)
+      );
+      const schedSnap = await getDocs(schedQ);
+      const schedFetched: any[] = [];
+      schedSnap.forEach((doc) => {
+        schedFetched.push({ id: doc.id, type: 'schedule', ...doc.data() });
+      });
+      schedFetched.sort((a, b) => {
+        if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
+        return a.timeSlot.localeCompare(b.timeSlot);
+      });
+
+      setCleanerAssignments([...fetched, ...schedFetched]);
     } catch (error) {
       console.error("Error fetching assignments:", error);
     } finally {
@@ -250,7 +266,7 @@ export default function Cleaners() {
                 )}
                 <h3 className="text-lg font-medium text-gray-900">{cleaner.name || 'Unnamed Cleaner'}</h3>
                 <p className="text-sm text-gray-500">{cleaner.email}</p>
-                <span className="mt-4 px-3 py-1 text-xs font-medium bg-cyan-100 text-cyan-800 rounded-full">
+                <span className="mt-4 px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                   {cleaner.status || 'Active'}
                 </span>
 
@@ -404,22 +420,28 @@ export default function Cleaners() {
                         No active assignments found for this cleaner.
                       </div>
                     ) : (
-                      <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                      <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
                         {cleanerAssignments.map(assignment => (
                           <div key={assignment.id} className="p-4 bg-white rounded-lg border border-gray-200 text-left shadow-sm">
                             <div className="flex justify-between items-start mb-2">
                               <span className="text-xs font-medium text-gray-500">
-                                {assignment.timestamp ? new Date(assignment.timestamp.toDate()).toLocaleDateString() : 'Unknown date'}
+                                {assignment.type === 'schedule'
+                                  ? `${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][assignment.dayOfWeek]} · ${assignment.timeSlot}`
+                                  : assignment.timestamp ? new Date(assignment.timestamp.toDate()).toLocaleDateString() : 'Unknown date'}
                               </span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
-                                Pending
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                assignment.type === 'schedule'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {assignment.type === 'schedule' ? (assignment.type === 'schedule' && assignment.type === 'recurring' ? 'Recurring' : 'Scheduled') : 'Pending Complaint'}
                               </span>
                             </div>
-                            {assignment.issues && assignment.issues.length > 0 && (
-                              <div className="text-sm text-gray-900 font-medium mb-1">
-                                Issues: {assignment.issues.join(', ')}
-                              </div>
-                            )}
+                            <div className="text-sm text-gray-900 font-medium mb-1">
+                              {assignment.type === 'schedule'
+                                ? `Routine Cleaning · ${assignment.locationName}`
+                                : (assignment.issues?.length > 0 ? `Issues: ${assignment.issues.join(', ')}` : 'General Cleaning')}
+                            </div>
                             {assignment.comments && (
                               <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded mt-2">
                                 "{assignment.comments}"

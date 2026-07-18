@@ -23,40 +23,13 @@ export default function Assignments() {
 
   useEffect(() => {
     if (userData?.uid && userData?.tenantId) {
-      fetchAssignments();
-      fetchSchedules();
+      fetchData();
     }
   }, [userData]);
 
-  const fetchSchedules = async () => {
+  const fetchData = async () => {
     try {
-      // Query only by cleanerId — avoids needing a composite Firestore index
-      const q = query(
-        collection(db, 'schedules'),
-        where('cleanerId', '==', userData?.uid)
-      );
-      const snap = await getDocs(q);
-      const fetched: any[] = [];
-      snap.forEach(doc => {
-        fetched.push({ id: doc.id, isSchedule: true, ...doc.data() });
-      });
-      // Sort by dayOfWeek then timeSlot
-      fetched.sort((a, b) => {
-        if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
-        return a.timeSlot.localeCompare(b.timeSlot);
-      });
-      setAssignments(prev => {
-        const noSchedules = prev.filter(a => !a.isSchedule);
-        return [...noSchedules, ...fetched];
-      });
-    } catch (error) {
-      console.error("Error fetching schedules:", error);
-    }
-  };
-
-  const fetchAssignments = async () => {
-    try {
-      // Fetch locations first for resolving names
+      // 1. Fetch locations
       const locQ = query(collection(db, 'locations'), where('tenantId', '==', userData?.tenantId));
       const locSnap = await getDocs(locQ);
       const locMap: Record<string, string> = {};
@@ -65,7 +38,7 @@ export default function Assignments() {
       });
       setLocations(locMap);
 
-      // Fetch assignments
+      // 2. Fetch assignments (customer feedback / already submitted schedules)
       const q = query(
         collection(db, 'customer_feedback'),
         where('tenantId', '==', userData?.tenantId),
@@ -73,18 +46,53 @@ export default function Assignments() {
       );
       
       const snap = await getDocs(q);
-      const fetched: any[] = [];
+      const fetchedAssignments: any[] = [];
+      const submittedScheduleIds = new Set<string>();
+      
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
       snap.forEach(doc => {
         const data = doc.data();
         if (data.status === 'pending' || data.status === 'review_pending') {
-          fetched.push({ id: doc.id, ...data });
+          fetchedAssignments.push({ id: doc.id, ...data });
+          
+          // Track schedules submitted today so we don't show the duplicate "Action Required" card
+          if (data.isScheduled && data.scheduleId && data.submittedAt) {
+            const subDate = data.submittedAt.toDate();
+            if (subDate >= todayStart) {
+              submittedScheduleIds.add(data.scheduleId);
+            }
+          }
+        }
+      });
+      fetchedAssignments.sort((a, b) => b.timestamp?.toMillis() - a.timestamp?.toMillis());
+
+      // 3. Fetch schedules
+      const schedQ = query(
+        collection(db, 'schedules'),
+        where('cleanerId', '==', userData?.uid)
+      );
+      const schedSnap = await getDocs(schedQ);
+      const fetchedSchedules: any[] = [];
+      
+      schedSnap.forEach(doc => {
+        // Only include if it hasn't been submitted today
+        if (!submittedScheduleIds.has(doc.id)) {
+          fetchedSchedules.push({ id: doc.id, isSchedule: true, ...doc.data() });
         }
       });
       
-      fetched.sort((a, b) => b.timestamp?.toMillis() - a.timestamp?.toMillis());
-      setAssignments(fetched);
+      // Sort schedules by dayOfWeek then timeSlot
+      fetchedSchedules.sort((a, b) => {
+        if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
+        return a.timeSlot.localeCompare(b.timeSlot);
+      });
+
+      // Merge and set
+      setAssignments([...fetchedAssignments, ...fetchedSchedules]);
     } catch (error) {
-      console.error("Error fetching assignments:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }

@@ -176,12 +176,12 @@ export default function Feedback() {
         {activeTab === 'feedback' ? (
           loading ? (
             <div className="py-10 text-center text-gray-500">Loading feedback...</div>
-          ) : feedbacks.filter(f => !f.isScheduled).length === 0 ? (
+          ) : feedbacks.filter(f => !f.isScheduled && !f.issues?.some(i => i.startsWith('Routine Cleaning'))).length === 0 ? (
             <div className="py-10 text-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
               No feedback received yet.
             </div>
           ) : (
-            feedbacks.filter(f => !f.isScheduled).map((item) => (
+            feedbacks.filter(f => !f.isScheduled && !f.issues?.some(i => i.startsWith('Routine Cleaning'))).map((item) => (
               <div key={item.id} className="bg-white shadow-sm overflow-hidden sm:rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
                 <div className="px-4 py-5 sm:px-6">
                   <div className="flex items-center justify-between">

@@ -302,7 +302,13 @@ export default function Assignments() {
                 )}
                 
                 {/* Photo Upload Area */}
-                {assignment.status === 'review_pending' ? (
+                {assignment.isSchedule && !isToday ? (
+                  <div className="mt-4 mb-4 py-8 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 flex flex-col items-center justify-center">
+                    <Calendar className="h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-gray-500 font-medium text-sm">Task opens on {DAYS_OF_WEEK[assignment.dayOfWeek]}</p>
+                    <p className="text-gray-400 text-xs mt-1">You can upload proof on the scheduled day.</p>
+                  </div>
+                ) : assignment.status === 'review_pending' ? (
                   <div className="mt-4 mb-4">
                     <p className="text-sm font-medium text-gray-700 mb-2">Submitted Proof</p>
                     <div className="border border-gray-200 rounded-xl p-2 bg-gray-50 text-center">
@@ -353,14 +359,14 @@ export default function Assignments() {
                   </div>
                 )}
 
-                {error && assignment.status !== 'review_pending' && (
+                {error && assignment.status !== 'review_pending' && (!assignment.isSchedule || isToday) && (
                   <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-start">
                     <AlertCircle className="h-5 w-5 mr-2 shrink-0 mt-0.5" />
                     <span>{error}</span>
                   </div>
                 )}
 
-                {assignment.status !== 'review_pending' && (
+                {assignment.status !== 'review_pending' && (!assignment.isSchedule || isToday) && (
                   <button
                     onClick={() => handleResolve(assignment)}
                     disabled={isSubmitting === assignment.id || !photos[assignment.id]}

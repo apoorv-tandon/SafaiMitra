@@ -114,7 +114,7 @@ export default function Feedback() {
   const handleRejectSubmission = async (feedbackId: string) => {
     try {
       await updateDoc(doc(db, 'customer_feedback', feedbackId), {
-        status: 'pending',
+        status: 'rejected',
         proofPhotoUrl: null // clear the rejected photo
       });
       fetchFeedback();

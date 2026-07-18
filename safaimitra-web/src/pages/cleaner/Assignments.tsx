@@ -54,10 +54,11 @@ export default function Assignments() {
 
       snap.forEach(doc => {
         const data = doc.data();
-        if (data.status === 'pending' || data.status === 'review_pending') {
+        if (data.status === 'pending' || data.status === 'review_pending' || data.status === 'rejected') {
           fetchedAssignments.push({ id: doc.id, ...data });
           
           // Track schedules submitted today so we don't show the duplicate "Action Required" card
+          // (If it was rejected, we STILL don't want the original schedule to show up, we want the rejected feedback record to show)
           if (data.isScheduled && data.scheduleId && data.submittedAt) {
             const subDate = data.submittedAt.toDate();
             if (subDate >= todayStart) {
@@ -274,6 +275,10 @@ export default function Assignments() {
                   {assignment.status === 'review_pending' ? (
                     <span className="text-xs font-semibold uppercase tracking-wider text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
                       Verification Pending
+                    </span>
+                  ) : assignment.status === 'rejected' ? (
+                    <span className="text-xs font-semibold uppercase tracking-wider text-red-700 bg-red-100 px-2 py-1 rounded">
+                      Rejected - Redo
                     </span>
                   ) : (
                     <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded">

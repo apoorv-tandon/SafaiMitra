@@ -273,14 +273,14 @@ export default function Feedback() {
             ))
           )
         ) : (
-          feedbacks.filter(f => f.status === 'review_pending').length === 0 ? (
+          feedbacks.filter(f => f.status === 'review_pending' || f.status === 'rejected' || (f.status === 'pending' && (f.isScheduled || f.issues?.some(i => i.startsWith('Routine Cleaning'))))).length === 0 ? (
             <div className="py-10 text-center flex flex-col items-center justify-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
               <ImageIcon className="h-12 w-12 text-gray-300 mb-4" />
               <p className="text-lg font-medium text-gray-900">No proofs submitted yet</p>
               <p className="mt-1">When cleaners submit photos of completed tasks, they will appear here for your review.</p>
             </div>
           ) : (
-            feedbacks.filter(f => f.status === 'review_pending').map(item => (
+            feedbacks.filter(f => f.status === 'review_pending' || f.status === 'rejected' || (f.status === 'pending' && (f.isScheduled || f.issues?.some(i => i.startsWith('Routine Cleaning'))))).map(item => (
               <div key={item.id} className="bg-white shadow-sm overflow-hidden sm:rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
                 <div className="px-4 py-5 sm:px-6">
                   <div className="flex justify-between items-start mb-4">
@@ -292,8 +292,10 @@ export default function Feedback() {
                         Assigned to: <span className="font-medium text-gray-900">{item.assignedCleanerName}</span>
                       </p>
                     </div>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      Pending Review
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      item.status === 'review_pending' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {item.status === 'review_pending' ? 'Pending Review' : 'Rejected'}
                     </span>
                   </div>
                   
@@ -324,18 +326,29 @@ export default function Feedback() {
                   )}
 
                   <div className="mt-4 pt-4 border-t border-gray-100 flex gap-4">
-                    <button
-                      onClick={() => handleResolveIssue(item.id)}
-                      className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors"
-                    >
-                      Approve & Mark Resolved
-                    </button>
-                    <button
-                      onClick={() => handleRejectSubmission(item.id)}
-                      className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-red-200 text-sm font-medium rounded-lg text-red-700 bg-red-50 hover:bg-red-100 shadow-sm transition-colors"
-                    >
-                      Reject (Re-assign)
-                    </button>
+                    {item.status === 'review_pending' ? (
+                      <>
+                        <button
+                          onClick={() => handleResolveIssue(item.id)}
+                          className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors"
+                        >
+                          Approve & Mark Resolved
+                        </button>
+                        <button
+                          onClick={() => handleRejectSubmission(item.id)}
+                          className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-red-200 text-sm font-medium rounded-lg text-red-700 bg-red-50 hover:bg-red-100 shadow-sm transition-colors"
+                        >
+                          Reject (Re-assign)
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleDeleteFeedback(item.id)}
+                        className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-red-200 text-sm font-medium rounded-lg text-red-700 bg-red-50 hover:bg-red-100 shadow-sm transition-colors"
+                      >
+                        Delete Submission
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

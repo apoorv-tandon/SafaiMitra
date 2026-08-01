@@ -85,6 +85,7 @@ export default function History() {
 
   const handleClearHistory = async () => {
     if (!window.confirm("Are you sure you want to delete ALL resolved history? This cannot be undone.")) return;
+    if (!window.confirm("FINAL WARNING: Are you absolutely sure you want to PERMANENTLY erase all history records?")) return;
     
     setLoading(true);
     try {

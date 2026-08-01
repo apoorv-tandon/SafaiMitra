@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -78,6 +78,23 @@ export default function History() {
       setFeedbacks(fetched);
     } catch (error) {
       console.error('Error fetching history:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearHistory = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL resolved history? This cannot be undone.")) return;
+    
+    setLoading(true);
+    try {
+      for (const item of feedbacks) {
+        await deleteDoc(doc(db, 'customer_feedback', item.id));
+      }
+      setFeedbacks([]);
+    } catch (error) {
+      console.error('Error clearing history:', error);
+      alert('Failed to clear history.');
     } finally {
       setLoading(false);
     }
@@ -176,8 +193,8 @@ export default function History() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <CheckCircle2 className="h-5 w-5 text-blue-600" />
+            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Resolved</p>
@@ -237,6 +254,14 @@ export default function History() {
               <option value="30">Last 30 days</option>
               <option value="all">All time</option>
             </select>
+            <button
+              onClick={handleClearHistory}
+              disabled={feedbacks.length === 0 || loading}
+              className="ml-2 flex items-center px-3 py-2 border border-red-200 text-sm font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-colors shrink-0"
+              title="Delete all history"
+            >
+              Clear History
+            </button>
           </div>
         </div>
       </div>
@@ -271,8 +296,8 @@ export default function History() {
                   className="w-full px-4 py-4 sm:px-6 flex items-center justify-between text-left"
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="hidden sm:flex h-9 w-9 rounded-full bg-blue-100 items-center justify-center shrink-0">
-                      <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                    <div className="hidden sm:flex h-9 w-9 rounded-full bg-green-100 items-center justify-center shrink-0">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

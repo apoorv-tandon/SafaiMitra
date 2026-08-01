@@ -260,7 +260,12 @@ export default function Cleaners() {
             <div key={cleaner.uid} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-sm transition-all duration-200">
               <div className="p-6 flex flex-col items-center text-center">
                 {cleaner.imageUrl ? (
-                  <img src={cleaner.imageUrl} alt={cleaner.name} className="h-16 w-16 rounded-full object-cover mb-4 shadow-sm" />
+                  <img 
+                    src={cleaner.imageUrl} 
+                    alt={cleaner.name} 
+                    className="h-16 w-16 rounded-full object-cover mb-4 shadow-sm" 
+                    onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(cleaner.name || 'C') + '&background=e0e7ff&color=4338ca&size=128'; }}
+                  />
                 ) : (
                   <UserCircle className="h-16 w-16 text-gray-400 mb-4" />
                 )}

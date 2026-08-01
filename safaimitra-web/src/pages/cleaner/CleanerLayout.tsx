@@ -75,9 +75,13 @@ export default function CleanerLayout() {
             <p className="text-sm font-medium text-gray-900">{userData?.name}</p>
             <p className="text-xs text-gray-500 capitalize">{userData?.role}</p>
           </div>
-          <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold shrink-0">
-            {userData?.name?.charAt(0) || 'C'}
-          </div>
+          {userData?.imageUrl ? (
+            <img src={userData.imageUrl} alt={userData?.name} className="h-8 w-8 rounded-full object-cover shrink-0 ring-2 ring-white" />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold shrink-0">
+              {userData?.name?.charAt(0) || 'C'}
+            </div>
+          )}
 
           {/* Notification Bell */}
           <div className="relative" ref={dropdownRef}>

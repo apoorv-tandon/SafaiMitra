@@ -10,6 +10,7 @@ interface UserData {
   tenantId: string;
   name: string;
   status: string;
+  imageUrl?: string;
 }
 
 interface AuthContextType {

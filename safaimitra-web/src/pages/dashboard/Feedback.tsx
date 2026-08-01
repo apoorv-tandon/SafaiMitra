@@ -13,8 +13,9 @@ interface Feedback {
   timestamp: any;
   assignedCleanerId?: string;
   assignedCleanerName?: string;
-  status?: 'pending' | 'resolved' | 'review_pending';
+  status?: 'pending' | 'resolved' | 'review_pending' | 'rejected';
   proofPhotoUrl?: string;
+  isScheduled?: boolean;
 }
 
 interface Cleaner {
@@ -31,6 +32,12 @@ export default function Feedback() {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [assigningFeedback, setAssigningFeedback] = useState<Feedback | null>(null);
   const [selectedCleanerId, setSelectedCleanerId] = useState('');
+
+  const isSubmissionItem = (f: Feedback) => {
+    return f.status === 'review_pending' || 
+           f.status === 'rejected' || 
+           (f.status === 'pending' && (f.isScheduled || f.issues?.some(i => i.startsWith('Routine Cleaning'))));
+  };
 
   useEffect(() => {
     fetchFeedback();
@@ -176,12 +183,12 @@ export default function Feedback() {
         {activeTab === 'feedback' ? (
           loading ? (
             <div className="py-10 text-center text-gray-500">Loading feedback...</div>
-          ) : feedbacks.filter(f => !f.isScheduled && !f.issues?.some(i => i.startsWith('Routine Cleaning'))).length === 0 ? (
+          ) : feedbacks.filter(f => !isSubmissionItem(f)).length === 0 ? (
             <div className="py-10 text-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
               No feedback received yet.
             </div>
           ) : (
-            feedbacks.filter(f => !f.isScheduled && !f.issues?.some(i => i.startsWith('Routine Cleaning'))).map((item) => (
+            feedbacks.filter(f => !isSubmissionItem(f)).map((item) => (
               <div key={item.id} className="bg-white shadow-sm overflow-hidden sm:rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
                 <div className="px-4 py-5 sm:px-6">
                   <div className="flex items-center justify-between">
@@ -273,14 +280,14 @@ export default function Feedback() {
             ))
           )
         ) : (
-          feedbacks.filter(f => f.status === 'review_pending' || f.status === 'rejected' || (f.status === 'pending' && (f.isScheduled || f.issues?.some(i => i.startsWith('Routine Cleaning'))))).length === 0 ? (
+          feedbacks.filter(f => isSubmissionItem(f)).length === 0 ? (
             <div className="py-10 text-center flex flex-col items-center justify-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
               <ImageIcon className="h-12 w-12 text-gray-300 mb-4" />
               <p className="text-lg font-medium text-gray-900">No proofs submitted yet</p>
               <p className="mt-1">When cleaners submit photos of completed tasks, they will appear here for your review.</p>
             </div>
           ) : (
-            feedbacks.filter(f => f.status === 'review_pending' || f.status === 'rejected' || (f.status === 'pending' && (f.isScheduled || f.issues?.some(i => i.startsWith('Routine Cleaning'))))).map(item => (
+            feedbacks.filter(f => isSubmissionItem(f)).map(item => (
               <div key={item.id} className="bg-white shadow-sm overflow-hidden sm:rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200">
                 <div className="px-4 py-5 sm:px-6">
                   <div className="flex justify-between items-start mb-4">

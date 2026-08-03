@@ -12,8 +12,10 @@ export default function CleanerLayout() {
   const { logout, userData, user, loading } = useAuth();
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
 
   // Real-time notifications for cleaner: new assignments, rejections, approvals
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function CleanerLayout() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setShowNotifications(false);
+      if (langDropdownRef.current && !langDropdownRef.current.contains(e.target as Node)) setShowLangDropdown(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -139,19 +142,47 @@ export default function CleanerLayout() {
             </AnimatePresence>
           </div>
 
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => {
-              const next = i18n.language === 'en' ? 'hi' : i18n.language === 'hi' ? 'te' : 'en';
-              i18n.changeLanguage(next);
-            }}
-            className="p-2 text-gray-500 hover:text-primary-600 transition-colors flex items-center"
-            title="Change Language"
-          >
-            <Languages className="h-5 w-5" />
-            <span className="ml-1 text-xs font-semibold">{i18n.language === 'en' ? 'EN' : i18n.language === 'hi' ? 'HI' : 'TE'}</span>
-          </motion.button>
+          <div className="relative" ref={langDropdownRef}>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowLangDropdown(!showLangDropdown)}
+              className="p-2 text-gray-500 hover:text-primary-600 transition-colors flex items-center"
+              title="Change Language"
+            >
+              <Languages className="h-5 w-5" />
+              <span className="ml-1 text-xs font-semibold">{i18n.language === 'en' ? 'EN' : i18n.language === 'hi' ? 'HI' : 'TE'}</span>
+            </motion.button>
+            <AnimatePresence>
+              {showLangDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50"
+                >
+                  <button
+                    onClick={() => { i18n.changeLanguage('en'); setShowLangDropdown(false); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${i18n.language === 'en' ? 'text-primary-600 font-semibold bg-primary-50/50' : 'text-gray-700'}`}
+                  >
+                    English
+                  </button>
+                  <button
+                    onClick={() => { i18n.changeLanguage('hi'); setShowLangDropdown(false); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${i18n.language === 'hi' ? 'text-primary-600 font-semibold bg-primary-50/50' : 'text-gray-700'}`}
+                  >
+                    हिंदी
+                  </button>
+                  <button
+                    onClick={() => { i18n.changeLanguage('te'); setShowLangDropdown(false); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${i18n.language === 'te' ? 'text-primary-600 font-semibold bg-primary-50/50' : 'text-gray-700'}`}
+                  >
+                    తెలుగు
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           <motion.button 
             whileHover={{ scale: 1.05 }}

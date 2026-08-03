@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck, CheckCircle2, Star, MapPin, Languages } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const COMMON_ISSUES = [
   'Dirty floor',
@@ -24,6 +24,18 @@ interface Location {
 
 export default function SubmitFeedback() {
   const { t, i18n } = useTranslation();
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowLangDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
   const [searchParams] = useSearchParams();
   const orgId = searchParams.get('org');
   const locId = searchParams.get('loc');
@@ -161,17 +173,44 @@ export default function SubmitFeedback() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-lg mx-auto">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 relative" ref={dropdownRef}>
           <button 
-            onClick={() => {
-              const next = i18n.language === 'en' ? 'hi' : i18n.language === 'hi' ? 'te' : 'en';
-              i18n.changeLanguage(next);
-            }}
+            onClick={() => setShowLangDropdown(!showLangDropdown)}
             className="flex items-center px-3 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <Languages className="w-4 h-4 mr-2 text-primary-600" />
             {i18n.language === 'en' ? 'English' : i18n.language === 'hi' ? 'हिंदी' : 'తెలుగు'}
           </button>
+          
+          <AnimatePresence>
+            {showLangDropdown && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 5 }}
+                className="absolute top-full right-0 mt-2 w-36 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50"
+              >
+                <button
+                  onClick={() => { i18n.changeLanguage('en'); setShowLangDropdown(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${i18n.language === 'en' ? 'text-primary-600 font-semibold bg-primary-50/50' : 'text-gray-700'}`}
+                >
+                  English
+                </button>
+                <button
+                  onClick={() => { i18n.changeLanguage('hi'); setShowLangDropdown(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${i18n.language === 'hi' ? 'text-primary-600 font-semibold bg-primary-50/50' : 'text-gray-700'}`}
+                >
+                  हिंदी (Hindi)
+                </button>
+                <button
+                  onClick={() => { i18n.changeLanguage('te'); setShowLangDropdown(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${i18n.language === 'te' ? 'text-primary-600 font-semibold bg-primary-50/50' : 'text-gray-700'}`}
+                >
+                  తెలుగు (Telugu)
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         
         <div className="text-center mb-8">

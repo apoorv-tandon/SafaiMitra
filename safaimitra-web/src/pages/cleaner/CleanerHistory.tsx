@@ -4,6 +4,7 @@ import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Clock, MapPin, Image as ImageIcon, Calendar, Trophy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CompletedTask {
   id: string;
@@ -16,6 +17,7 @@ interface CompletedTask {
 }
 
 export default function CleanerHistory() {
+  const { t } = useTranslation();
   const { userData } = useAuth();
   const [tasks, setTasks] = useState<CompletedTask[]>([]);
   const [locations, setLocations] = useState<Record<string, string>>({});
@@ -82,7 +84,7 @@ export default function CleanerHistory() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Completed Tasks</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('cleaner.resolutionHistory')}</h1>
 
       {/* Summary */}
       <motion.div
@@ -96,7 +98,7 @@ export default function CleanerHistory() {
             <Trophy className="h-6 w-6 text-amber-600" />
           </div>
           <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Tasks Completed</p>
+            <p className="text-sm font-medium text-gray-500">{t('cleaner.completedTasks')}</p>
             <p className="text-3xl font-bold text-gray-900">{tasks.length}</p>
           </div>
         </div>
@@ -127,13 +129,13 @@ export default function CleanerHistory() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, delay: index * 0.05 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden border-l-4 border-l-blue-400"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden border-l-4 border-l-green-400"
               >
                 <div className="p-4">
                   <div className="flex items-start gap-3">
-                    {/* Blue Checkmark */}
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                    {/* Green Checkmark */}
+                    <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
                     </div>
 
                     {/* Content */}
@@ -147,7 +149,7 @@ export default function CleanerHistory() {
                       {/* Issues */}
                       {task.issues && task.issues.length > 0 && (
                         <p className="text-sm text-gray-700 mb-2">
-                          {task.issues.join(', ')}
+                          {task.issues.map((i: string) => t(`public.issues.${i.toLowerCase().replace(/ /g, '_')}`, i)).join(', ')}
                         </p>
                       )}
 

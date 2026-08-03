@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Navigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { LogOut, ShieldCheck, Bell, ClipboardList, ListTodo, MessageSquareWarning } from 'lucide-react';
+import { LogOut, ShieldCheck, Bell, ClipboardList, ListTodo, MessageSquareWarning, Languages } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 export default function CleanerLayout() {
+  const { t, i18n } = useTranslation();
   const { logout, userData, user, loading } = useAuth();
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -140,6 +142,17 @@ export default function CleanerLayout() {
           <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en')}
+            className="p-2 text-gray-500 hover:text-primary-600 transition-colors flex items-center"
+            title={i18n.language === 'en' ? 'Switch to Hindi' : 'Switch to English'}
+          >
+            <Languages className="h-5 w-5" />
+            <span className="ml-1 text-xs font-semibold">{i18n.language === 'en' ? 'HI' : 'EN'}</span>
+          </motion.button>
+
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={logout}
             className="p-2 text-gray-500 hover:text-red-600 transition-colors"
           >
@@ -163,7 +176,7 @@ export default function CleanerLayout() {
             }`}
           >
             <ListTodo className={`h-5 w-5 mb-1 ${isTasksActive ? 'text-primary-600' : 'text-gray-400'}`} />
-            My Tasks
+            {t('cleaner.myTasks')}
             {isTasksActive && <div className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-primary-600 rounded-full" />}
           </Link>
           <Link
@@ -173,7 +186,7 @@ export default function CleanerLayout() {
             }`}
           >
             <ClipboardList className={`h-5 w-5 mb-1 ${isHistoryActive ? 'text-primary-600' : 'text-gray-400'}`} />
-            History
+            {t('cleaner.history')}
             {isHistoryActive && <div className="absolute top-0 left-3/4 right-0 h-0.5 bg-primary-600 rounded-full" />}
           </Link>
         </div>

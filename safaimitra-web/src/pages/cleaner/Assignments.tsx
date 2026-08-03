@@ -7,8 +7,10 @@ import { CheckCircle2, MapPin, Camera, X, Loader2, AlertCircle, Calendar } from 
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function Assignments() {
+  const { t } = useTranslation();
   const { userData } = useAuth();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [locations, setLocations] = useState<Record<string, string>>({});
@@ -228,15 +230,15 @@ export default function Assignments() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Assignments</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('cleaner.myTasks')}</h1>
       
       {assignments.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
           <div className="mx-auto h-16 w-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
             <CheckCircle2 className="h-8 w-8 text-green-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">You're all caught up!</h2>
-          <p className="text-gray-500">No active assignments at the moment. Take a breather.</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t('cleaner.allCaughtUp')}</h2>
+          <p className="text-gray-500">{t('cleaner.noActiveAssignments')}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -274,25 +276,25 @@ export default function Assignments() {
                   </div>
                   {assignment.status === 'review_pending' ? (
                     <span className="text-xs font-semibold uppercase tracking-wider text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
-                      Verification Pending
+                      {t('cleaner.awaitingReview')}
                     </span>
                   ) : assignment.status === 'rejected' ? (
                     <span className="text-xs font-semibold uppercase tracking-wider text-red-700 bg-red-100 px-2 py-1 rounded">
-                      Rejected - Redo
+                      {t('cleaner.rejected')}
                     </span>
                   ) : (
                     <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                      Action Required
+                      {t('cleaner.takePhoto')}
                     </span>
                   )}
                 </div>
                 
                 <h3 className="text-lg font-bold text-gray-900 mb-2">
                   {assignment.isSchedule 
-                    ? `Routine Cleaning`
+                    ? t('cleaner.routineCleaning')
                     : (assignment.issues && assignment.issues.length > 0 
-                        ? assignment.issues.join(', ') 
-                        : 'General Cleaning Required')}
+                        ? assignment.issues.map((i: string) => t(`public.issues.${i.toLowerCase().replace(/ /g, '_')}`, i)).join(', ') 
+                        : t('cleaner.customerComplaint'))}
                 </h3>
                 
                 {assignment.comments && (
@@ -305,24 +307,24 @@ export default function Assignments() {
                 {assignment.isSchedule && !isToday ? (
                   <div className="mt-4 mb-4 py-8 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 flex flex-col items-center justify-center">
                     <Calendar className="h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-gray-500 font-medium text-sm">Task opens on {DAYS_OF_WEEK[assignment.dayOfWeek]}</p>
-                    <p className="text-gray-400 text-xs mt-1">You can upload proof on the scheduled day.</p>
+                    <p className="text-gray-500 font-medium text-sm">{t('cleaner.taskOpensOn', { day: DAYS_OF_WEEK[assignment.dayOfWeek] })}</p>
+                    <p className="text-gray-400 text-xs mt-1">{t('cleaner.uploadOnScheduledDay')}</p>
                   </div>
                 ) : assignment.status === 'review_pending' ? (
                   <div className="mt-4 mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Submitted Proof</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">{t('cleaner.proofSubmitted')}</p>
                     <div className="border border-gray-200 rounded-xl p-2 bg-gray-50 text-center">
                       {assignment.proofPhotoUrl ? (
                         <img src={assignment.proofPhotoUrl} alt="Proof" className="w-full h-48 object-cover rounded-lg shadow-sm" />
                       ) : (
-                        <p className="py-8 text-gray-500">Photo submitted</p>
+                        <p className="py-8 text-gray-500">{t('cleaner.proofSubmitted')}</p>
                       )}
-                      <p className="mt-2 text-sm text-yellow-700 font-medium">Waiting for Admin to verify</p>
+                      <p className="mt-2 text-sm text-yellow-700 font-medium">{t('cleaner.awaitingReview')}</p>
                     </div>
                   </div>
                 ) : (
                   <div className="mt-4 mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Proof of Cleaning</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">{t('cleaner.takePhoto')}</p>
                     
                     <div 
                       className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
@@ -343,7 +345,7 @@ export default function Assignments() {
                         <div className="relative">
                           <img src={photoPreviews[assignment.id]} alt="Proof preview" className="w-full h-48 object-cover rounded-lg shadow-sm" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity text-white font-medium">
-                            Tap to change photo
+                            {t('cleaner.retakePhoto')}
                           </div>
                         </div>
                       ) : (
@@ -351,8 +353,7 @@ export default function Assignments() {
                           <div className="h-12 w-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-2">
                             <Camera className="h-6 w-6 text-primary-600" />
                           </div>
-                          <span className="text-primary-600 font-semibold text-sm">Take Photo</span>
-                          <span className="text-xs text-gray-500 mt-1">Required to complete task</span>
+                          <span className="text-primary-600 font-semibold text-sm">{t('cleaner.takePhoto')}</span>
                         </div>
                       )}
                     </div>
@@ -377,7 +378,7 @@ export default function Assignments() {
                     ) : (
                       <>
                         <CheckCircle2 className="h-5 w-5 mr-2" />
-                        Submit for Review
+                        {t('cleaner.submitProof')}
                       </>
                     )}
                   </button>

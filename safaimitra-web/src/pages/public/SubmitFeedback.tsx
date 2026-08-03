@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Send, MapPin, CheckCircle2, ChevronRight, Check, Star } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { ShieldCheck, CheckCircle2, Star, MapPin, Languages } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const COMMON_ISSUES = [
   'Dirty floor',
@@ -22,6 +23,7 @@ interface Location {
 }
 
 export default function SubmitFeedback() {
+  const { t, i18n } = useTranslation();
   const [searchParams] = useSearchParams();
   const orgId = searchParams.get('org');
   const locId = searchParams.get('loc');
@@ -43,7 +45,7 @@ export default function SubmitFeedback() {
       fetchLocations();
     } else {
       setLoading(false);
-      setError('Invalid QR Code: Missing Organization ID.');
+      setError(t('public.failedLoadWashrooms'));
     }
   }, [orgId]);
 
@@ -71,7 +73,7 @@ export default function SubmitFeedback() {
       }
     } catch (err) {
       console.error("Error fetching locations:", err);
-      setError('Failed to load washrooms. Please try again later.');
+      setError(t('public.failedLoadWashrooms'));
     } finally {
       setLoading(false);
     }
@@ -89,15 +91,15 @@ export default function SubmitFeedback() {
     e.preventDefault();
     if (!orgId) return;
     if (!selectedLocation) {
-      setError('Please select a washroom location.');
+      setError(t('public.errSelectWashroom'));
       return;
     }
     if (rating === 0) {
-      setError('Please provide a star rating.');
+      setError(t('public.errProvideRating'));
       return;
     }
     if (rating < 5 && selectedIssues.length === 0 && !comments.trim()) {
-      setError('Please select at least one issue or provide comments for a rating lower than 5.');
+      setError(t('public.errProvideDetails'));
       return;
     }
 
@@ -116,7 +118,7 @@ export default function SubmitFeedback() {
       setSubmitted(true);
     } catch (err) {
       console.error("Error submitting feedback:", err);
-      setError('Failed to submit feedback. Please try again.');
+      setError(t('public.failedLoadWashrooms')); // Generic error
     } finally {
       setSubmitting(false);
     }
@@ -141,9 +143,9 @@ export default function SubmitFeedback() {
           <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
             <CheckCircle2 className="h-8 w-8 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('public.thankYou')}</h2>
           <p className="text-gray-600 mb-8">
-            Your feedback has been successfully submitted. Our cleaning staff has been notified and will address the issue shortly.
+            {t('public.issueReported')}
           </p>
           <Link 
             to="/login"
@@ -157,17 +159,25 @@ export default function SubmitFeedback() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative">
+      <button 
+        onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en')}
+        className="absolute top-4 right-4 flex items-center px-3 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
+      >
+        <Languages className="w-4 h-4 mr-2 text-primary-600" />
+        {i18n.language === 'en' ? 'हिंदी' : 'English'}
+      </button>
+
+      <div className="max-w-lg mx-auto mt-4">
         <div className="text-center mb-8">
-          <div className="mx-auto h-16 w-16 mb-4 flex items-center justify-center">
-             <img src="/logo.png" alt="SafaiMitra Logo" className="h-16 w-16 object-contain" />
+          <div className="mx-auto h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mb-4">
+            <ShieldCheck className="h-8 w-8 text-primary-600" />
           </div>
           <h2 className="text-3xl font-extrabold text-gray-900">
-            Report an Issue
+            {t('public.reportIssue')}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Help us maintain clean and hygienic washrooms.
+            {t('public.helpMaintain')}
           </p>
         </div>
 
@@ -188,7 +198,7 @@ export default function SubmitFeedback() {
               {/* Location Select */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Which washroom are you in? *
+                  {t('public.selectWashroom')}
                 </label>
                 {qrAutoSelected && selectedLocation ? (
                   <div className="mt-1 flex items-center justify-between bg-primary-50 border border-primary-200 rounded-lg px-4 py-3">
@@ -216,21 +226,21 @@ export default function SubmitFeedback() {
                     required
                     className="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-lg border bg-gray-50"
                   >
-                    <option value="" disabled>Select a location</option>
+                    <option value="" disabled>{t('public.selectLocation')}</option>
                     {locations.map((loc) => (
                       <option key={loc.id} value={loc.id}>{loc.name}</option>
                     ))}
                   </select>
                 )}
                 {locations.length === 0 && (
-                  <p className="mt-2 text-xs text-red-500">No locations found for this organization.</p>
+                  <p className="mt-2 text-xs text-red-500">{t('public.noLocations')}</p>
                 )}
               </div>
 
               {/* Star Rating */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
-                  How was your experience? *
+                  {t('public.howWasExperience')}
                 </label>
                 <div className="flex justify-center space-x-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -257,7 +267,7 @@ export default function SubmitFeedback() {
               {/* Issues Chips */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  What issues are you facing? (Select all that apply)
+                  {t('public.whatIssues')}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {COMMON_ISSUES.map((issue) => (
@@ -271,7 +281,7 @@ export default function SubmitFeedback() {
                           : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                     >
-                      {issue}
+                      {t(`public.issues.${issue.toLowerCase().replace(/ /g, '_')}`, issue)}
                     </button>
                   ))}
                 </div>
@@ -280,14 +290,14 @@ export default function SubmitFeedback() {
               {/* Comments Textarea */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Additional Comments (Optional)
+                  {t('public.anyOtherComments')}
                 </label>
                 <textarea
                   rows={4}
                   value={comments}
                   onChange={(e) => setComments(e.target.value)}
                   className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-lg border p-3 bg-gray-50"
-                  placeholder="Describe the exact issue..."
+                  placeholder={t('public.placeholderComments')}
                 />
               </div>
 
@@ -297,7 +307,7 @@ export default function SubmitFeedback() {
                   disabled={submitting || locations.length === 0}
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
                 >
-                  {submitting ? 'Submitting...' : 'Submit Feedback'}
+                  {submitting ? t('public.submitting') : t('public.submitFeedback')}
                 </button>
               </div>
             </form>

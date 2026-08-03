@@ -159,16 +159,18 @@ export default function SubmitFeedback() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative">
-      <button 
-        onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en')}
-        className="absolute top-4 right-4 flex items-center px-3 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
-      >
-        <Languages className="w-4 h-4 mr-2 text-primary-600" />
-        {i18n.language === 'en' ? 'हिंदी' : 'English'}
-      </button>
-
-      <div className="max-w-lg mx-auto mt-4">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-lg mx-auto">
+        <div className="flex justify-end mb-4">
+          <button 
+            onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en')}
+            className="flex items-center px-3 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Languages className="w-4 h-4 mr-2 text-primary-600" />
+            {i18n.language === 'en' ? 'हिंदी' : 'English'}
+          </button>
+        </div>
+        
         <div className="text-center mb-8">
           <div className="mx-auto h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mb-4">
             <ShieldCheck className="h-8 w-8 text-primary-600" />

@@ -163,11 +163,14 @@ export default function SubmitFeedback() {
       <div className="max-w-lg mx-auto">
         <div className="flex justify-end mb-4">
           <button 
-            onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en')}
+            onClick={() => {
+              const next = i18n.language === 'en' ? 'hi' : i18n.language === 'hi' ? 'te' : 'en';
+              i18n.changeLanguage(next);
+            }}
             className="flex items-center px-3 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <Languages className="w-4 h-4 mr-2 text-primary-600" />
-            {i18n.language === 'en' ? 'हिंदी' : 'English'}
+            {i18n.language === 'en' ? 'English' : i18n.language === 'hi' ? 'हिंदी' : 'తెలుగు'}
           </button>
         </div>
         

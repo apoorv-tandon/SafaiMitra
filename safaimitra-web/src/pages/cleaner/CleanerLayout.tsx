@@ -142,12 +142,15 @@ export default function CleanerLayout() {
           <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en')}
+            onClick={() => {
+              const next = i18n.language === 'en' ? 'hi' : i18n.language === 'hi' ? 'te' : 'en';
+              i18n.changeLanguage(next);
+            }}
             className="p-2 text-gray-500 hover:text-primary-600 transition-colors flex items-center"
-            title={i18n.language === 'en' ? 'Switch to Hindi' : 'Switch to English'}
+            title="Change Language"
           >
             <Languages className="h-5 w-5" />
-            <span className="ml-1 text-xs font-semibold">{i18n.language === 'en' ? 'HI' : 'EN'}</span>
+            <span className="ml-1 text-xs font-semibold">{i18n.language === 'en' ? 'EN' : i18n.language === 'hi' ? 'HI' : 'TE'}</span>
           </motion.button>
 
           <motion.button 

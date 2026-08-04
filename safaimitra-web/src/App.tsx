@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/auth/Login';
 import SubmitFeedback from './pages/public/SubmitFeedback';
+import About from './pages/public/About';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Overview from './pages/dashboard/Overview';
 import Locations from './pages/dashboard/Locations';
@@ -22,6 +23,7 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/submit-feedback" element={<SubmitFeedback />} />
+          <Route path="/about" element={<About />} />
           
           <Route path="/dashboard" element={
             <ProtectedRoute>

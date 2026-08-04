@@ -234,10 +234,13 @@ export default function Login() {
             <p className="text-sm text-gray-600 mb-4">Are you a customer wanting to report an issue?</p>
             <button
               onClick={() => navigate('/submit-feedback?org=test1')}
-              className="w-full flex justify-center py-2.5 px-4 border-2 border-primary-600 rounded-full shadow-sm bg-white text-sm font-medium text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+              className="w-full flex justify-center py-2.5 px-4 border-2 border-primary-600 rounded-full shadow-sm bg-white text-sm font-medium text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors mb-6"
             >
               Submit Customer Feedback
             </button>
+            <Link to="/about" className="text-sm font-medium text-gray-500 hover:text-primary-600 transition-colors">
+              Learn more about SafaiMitra - About Us
+            </Link>
           </div>
         </div>
       </motion.div>

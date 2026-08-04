@@ -378,10 +378,15 @@ export default function SubmitFeedback() {
                 <button
                   type="submit"
                   disabled={submitting || locations.length === 0}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors mb-6"
                 >
                   {submitting ? t('public.submitting') : t('public.submitFeedback')}
                 </button>
+                <div className="text-center">
+                  <Link to="/about" className="text-sm font-medium text-gray-500 hover:text-primary-600 transition-colors">
+                    Learn more about SafaiMitra - About Us
+                  </Link>
+                </div>
               </div>
             </form>
           )}

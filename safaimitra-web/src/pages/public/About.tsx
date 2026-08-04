@@ -75,9 +75,17 @@ export default function About() {
               1st Place Winners
               <Sparkles className="h-6 w-6 ml-2 text-yellow-200" />
             </h2>
-            <p className="text-lg sm:text-xl font-medium text-yellow-50">
+            <p className="text-lg sm:text-xl font-medium text-yellow-50 mb-8">
               All India AMIEE National Innovation Hackathon
             </p>
+            
+            <div className="mt-6 flex justify-center">
+              <img 
+                src="/hackathon.jpeg" 
+                alt="Hackathon Winner Poster" 
+                className="max-w-full h-auto rounded-xl shadow-2xl border-4 border-yellow-300/30 object-contain max-h-[800px]"
+              />
+            </div>
           </div>
         </motion.div>
 

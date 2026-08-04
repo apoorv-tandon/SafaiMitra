@@ -98,9 +98,11 @@ export default function Login() {
         className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-soft border border-gray-200"
       >
         <div className="flex flex-col items-center">
-          <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center">
-            <ShieldCheck className="h-8 w-8 text-primary-600" />
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="SafaiMitra Logo" 
+            className="h-28 w-28 object-contain rounded-full shadow-sm"
+          />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             SafaiMitra
           </h2>

@@ -22,6 +22,31 @@ interface Location {
   name: string;
 }
 
+const translateLocationName = (name: string, lang: string) => {
+  if (!name) return '';
+  if (lang === 'te') {
+    const map: Record<string, string> = {
+      'Ram Bhavan First Floor': 'రామ్ భవన్ మొదటి అంతస్తు',
+      'Malviya Bhavan': 'మాలవీయ భవన్',
+      'Krishna Bhavan': 'కృష్ణ భవన్',
+      'meera bhavan': 'మీరా భవన్',
+      'gautam': 'గౌతమ్'
+    };
+    return map[name.trim()] || name;
+  }
+  if (lang === 'hi') {
+    const map: Record<string, string> = {
+      'Ram Bhavan First Floor': 'राम भवन पहली मंजिल',
+      'Malviya Bhavan': 'मालवीय भवन',
+      'Krishna Bhavan': 'कृष्णा भवन',
+      'meera bhavan': 'मीरा भवन',
+      'gautam': 'गौतम'
+    };
+    return map[name.trim()] || name;
+  }
+  return name;
+};
+
 export default function SubmitFeedback() {
   const { t, i18n } = useTranslation();
   const [showLangDropdown, setShowLangDropdown] = useState(false);
@@ -252,7 +277,7 @@ export default function SubmitFeedback() {
                       <MapPin className="h-5 w-5 text-primary-600 mr-2 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-semibold text-gray-900">
-                          {locations.find(l => l.id === selectedLocation)?.name}
+                          {translateLocationName(locations.find(l => l.id === selectedLocation)?.name || '', i18n.language)}
                         </p>
                         <p className="text-xs text-primary-600">Scanned via QR code</p>
                       </div>
@@ -274,7 +299,7 @@ export default function SubmitFeedback() {
                   >
                     <option value="" disabled>{t('public.selectLocation')}</option>
                     {locations.map((loc) => (
-                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                      <option key={loc.id} value={loc.id}>{translateLocationName(loc.name, i18n.language)}</option>
                     ))}
                   </select>
                 )}

@@ -48,7 +48,7 @@ export default function About() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <img src="/logo.png" alt="SafaiMitra Large Logo" className="h-32 w-32 mx-auto mb-8 rounded-full shadow-lg" />
+              <img src="/logo.png" alt="SafaiMitra Large Logo" className="h-32 w-32 mx-auto mb-8 object-contain drop-shadow-md" />
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight mb-6">
                 Revolutionizing <span className="text-primary-600">Sanitation Management</span>
               </h1>

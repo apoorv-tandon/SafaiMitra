@@ -31,10 +31,10 @@ export default function About() {
             <ArrowLeft className="h-5 w-5 mr-2" />
             <span className="font-semibold">Back to Home</span>
           </Link>
-          <div className="flex items-center">
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
             <img src="/logo.png" alt="SafaiMitra" className="h-10 w-10 object-contain mr-2" />
             <span className="text-xl font-bold text-gray-900 tracking-tight">SafaiMitra</span>
-          </div>
+          </Link>
         </div>
       </nav>
 

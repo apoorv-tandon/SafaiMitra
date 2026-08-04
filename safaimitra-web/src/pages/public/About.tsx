@@ -149,7 +149,7 @@ export default function About() {
                     <img 
                       src={member.image} 
                       alt={member.name} 
-                      className={`w-32 h-32 rounded-full mx-auto mb-6 ring-4 ring-primary-50 object-cover ${member.position || 'object-center'}`}
+                      className="w-32 h-32 rounded-full mx-auto mb-6 ring-4 ring-primary-50 object-cover"
                     />
                     <h3 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h3>
                     <p className="text-sm font-medium text-primary-600 px-4">{member.role}</p>

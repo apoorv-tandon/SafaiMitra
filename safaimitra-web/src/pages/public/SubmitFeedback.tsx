@@ -214,9 +214,11 @@ export default function SubmitFeedback() {
         </div>
         
         <div className="text-center mb-8">
-          <div className="mx-auto h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mb-4">
-            <ShieldCheck className="h-8 w-8 text-primary-600" />
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="SafaiMitra Logo" 
+            className="h-20 w-20 object-contain rounded-full shadow-sm mx-auto mb-4"
+          />
           <h2 className="text-3xl font-extrabold text-gray-900">
             {t('public.reportIssue')}
           </h2>

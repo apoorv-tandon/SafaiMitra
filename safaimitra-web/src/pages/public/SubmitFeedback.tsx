@@ -239,11 +239,13 @@ export default function SubmitFeedback() {
         </div>
         
         <div className="text-center mb-8">
-          <img 
-            src="/logo.png" 
-            alt="SafaiMitra Logo" 
-            className="h-28 w-28 object-contain rounded-full shadow-sm mx-auto -mb-4 relative z-10"
-          />
+          <Link to="/" className="inline-block">
+            <img 
+              src="/logo.png" 
+              alt="SafaiMitra Logo" 
+              className="h-28 w-28 object-contain rounded-full shadow-sm mx-auto -mb-4 relative z-10 transition-transform hover:scale-105 cursor-pointer"
+            />
+          </Link>
           <h2 className="text-3xl font-extrabold text-gray-900">
             {t('public.reportIssue')}
           </h2>

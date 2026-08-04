@@ -101,7 +101,7 @@ export default function Login() {
           <img 
             src="/logo.png" 
             alt="SafaiMitra Logo" 
-            className="h-28 w-28 object-contain rounded-full shadow-sm"
+            className="h-36 w-36 object-contain rounded-full shadow-sm"
           />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             SafaiMitra

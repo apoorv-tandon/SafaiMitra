@@ -198,10 +198,13 @@ export default function SubmitFeedback() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-lg mx-auto">
-        <div className="flex justify-end mb-4 relative" ref={dropdownRef}>
+        <div className="flex justify-between items-center mb-4 relative" ref={dropdownRef}>
+          <Link to="/about" className="flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800 bg-white border border-gray-200 px-4 py-2 rounded-full shadow-sm hover:bg-gray-50 transition-all hover:scale-105">
+            About Us
+          </Link>
           <button 
             onClick={() => setShowLangDropdown(!showLangDropdown)}
-            className="flex items-center px-3 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center px-4 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <Languages className="w-4 h-4 mr-2 text-primary-600" />
             {i18n.language === 'en' ? 'English' : i18n.language === 'hi' ? 'हिंदी' : 'తెలుగు'}
@@ -378,15 +381,10 @@ export default function SubmitFeedback() {
                 <button
                   type="submit"
                   disabled={submitting || locations.length === 0}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors mb-6"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
                 >
                   {submitting ? t('public.submitting') : t('public.submitFeedback')}
                 </button>
-                <div className="text-center">
-                  <Link to="/about" className="text-sm font-medium text-gray-500 hover:text-primary-600 transition-colors">
-                    Learn more about SafaiMitra - About Us
-                  </Link>
-                </div>
               </div>
             </form>
           )}

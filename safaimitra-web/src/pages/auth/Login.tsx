@@ -90,7 +90,13 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative">
+      <div className="absolute top-4 right-4 sm:top-8 sm:right-8">
+        <Link to="/about" className="flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800 bg-white border border-gray-200 px-4 py-2 rounded-full shadow-sm hover:bg-gray-50 transition-all hover:scale-105">
+          About Us
+        </Link>
+      </div>
+      
       <motion.div 
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -234,13 +240,10 @@ export default function Login() {
             <p className="text-sm text-gray-600 mb-4">Are you a customer wanting to report an issue?</p>
             <button
               onClick={() => navigate('/submit-feedback?org=test1')}
-              className="w-full flex justify-center py-2.5 px-4 border-2 border-primary-600 rounded-full shadow-sm bg-white text-sm font-medium text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors mb-6"
+              className="w-full flex justify-center py-2.5 px-4 border-2 border-primary-600 rounded-full shadow-sm bg-white text-sm font-medium text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
             >
               Submit Customer Feedback
             </button>
-            <Link to="/about" className="text-sm font-medium text-gray-500 hover:text-primary-600 transition-colors">
-              Learn more about SafaiMitra - About Us
-            </Link>
           </div>
         </div>
       </motion.div>

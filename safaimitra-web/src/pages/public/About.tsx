@@ -7,17 +7,20 @@ const TEAM_MEMBERS = [
   {
     name: "Apoorva Tandon",
     role: "MSc Economics + BE Computer Science",
-    image: "/apoorva.png"
+    image: "/apoorva.png",
+    position: "object-center"
   },
   {
     name: "Abhigyan Krishna Tiwari",
     role: "MSc Physics + BE Computer Science",
-    image: "/abhigyan.jpeg"
+    image: "/abhigyan.jpeg",
+    position: "object-top"
   },
   {
     name: "Aman Kumar Singh",
     role: "MSc Physics + BE Computer Science",
-    image: "/aman.jpeg"
+    image: "/aman.jpeg",
+    position: "object-top"
   }
 ];
 
@@ -141,7 +144,7 @@ export default function About() {
                     <img 
                       src={member.image} 
                       alt={member.name} 
-                      className="w-32 h-32 rounded-full mx-auto mb-6 ring-4 ring-primary-50 object-cover"
+                      className={`w-32 h-32 rounded-full mx-auto mb-6 ring-4 ring-primary-50 object-cover ${member.position || 'object-center'}`}
                     />
                     <h3 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h3>
                     <p className="text-sm font-medium text-primary-600 px-4">{member.role}</p>

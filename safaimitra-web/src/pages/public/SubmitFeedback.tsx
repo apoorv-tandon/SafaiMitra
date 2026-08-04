@@ -217,7 +217,7 @@ export default function SubmitFeedback() {
           <img 
             src="/logo.png" 
             alt="SafaiMitra Logo" 
-            className="h-28 w-28 object-contain rounded-full shadow-sm mx-auto mb-4"
+            className="h-28 w-28 object-contain rounded-full shadow-sm mx-auto mb-2"
           />
           <h2 className="text-3xl font-extrabold text-gray-900">
             {t('public.reportIssue')}

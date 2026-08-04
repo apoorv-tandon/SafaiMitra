@@ -7,20 +7,17 @@ const TEAM_MEMBERS = [
   {
     name: "Apoorva Tandon",
     role: "MSc Economics + BE Computer Science",
-    image: "/apoorva.png",
-    position: "object-center"
+    image: "/apoorva.png"
   },
   {
     name: "Abhigyan Krishna Tiwari",
     role: "MSc Physics + BE Computer Science",
-    image: "/abhigyan.jpeg",
-    position: "object-top"
+    image: "/abhigyan.jpeg"
   },
   {
     name: "Aman Kumar Singh",
     role: "MSc Physics + BE Computer Science",
-    image: "/aman.jpeg",
-    position: "object-top"
+    image: "/aman.jpeg"
   }
 ];
 

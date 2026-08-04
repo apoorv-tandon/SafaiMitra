@@ -70,10 +70,10 @@ export default function CleanerLayout() {
   return (
     <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
       {/* Mobile Header */}
-      <header className="bg-white h-16 flex items-center justify-between px-4 border-b border-gray-200 shadow-sm z-10 shrink-0">
+      <header className="bg-white h-20 flex items-center justify-between px-4 border-b border-gray-200 shadow-sm z-10 shrink-0">
         <div className="flex items-center">
-          <ShieldCheck className="h-8 w-8 text-primary-600 mr-2" />
-          <span className="text-xl font-bold text-gray-900 tracking-tight">SafaiMitra</span>
+          <img src="/logo.png" alt="SafaiMitra Logo" className="h-16 w-16 object-contain rounded-full shadow-sm mr-2" />
+          <span className="text-2xl font-bold text-gray-900 tracking-tight">SafaiMitra</span>
         </div>
         <div className="flex items-center space-x-3">
           <div className="text-right hidden sm:block">

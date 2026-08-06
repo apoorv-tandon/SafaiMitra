@@ -65,15 +65,8 @@ export default function Login() {
       let role = userDoc.data()?.role;
 
       if (!userDoc.exists()) {
-        // Auto-create an admin account for new Google sign-ins so they don't get locked out
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          email: userCredential.user.email,
-          name: userCredential.user.displayName || 'Admin User',
-          role: 'org_admin',
-          status: 'active',
-          tenantId: 'demo-tenant'
-        });
-        role = 'org_admin';
+        await signOut(auth);
+        throw new Error('Account not found. Please contact your administrator for access.');
       }
 
       if (loginType === 'admin' && role === 'cleaner') {
